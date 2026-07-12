@@ -79,6 +79,25 @@ Always keep independent backups of important research data.
 
 - Python 3.11 or newer
 
+Install the current GitHub release globally with `pipx`:
+
+```bash
+brew install pipx
+pipx install git+https://github.com/sbilmis/zotero-project-manager.git
+```
+
+After the first PyPI release is published, the shorter command is:
+
+```bash
+pipx install zotero-project-manager
+```
+
+Upgrade an existing `pipx` installation with:
+
+```bash
+pipx upgrade zotero-project-manager
+```
+
 Install from a checkout:
 
 ```bash

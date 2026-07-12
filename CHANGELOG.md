@@ -2,6 +2,14 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 0.3.0 — 2026-07-12
+
+- Add cross-platform CI for Python 3.11 and 3.14.
+- Build and validate source and wheel distributions on every pull request and main push.
+- Add release-gated PyPI Trusted Publishing with no stored API token.
+- Document `pipx` installation and the protected release process.
+- Add canonical project, documentation, issue, and changelog URLs to package metadata.
+
 ## 0.2.1 — 2026-07-12
 
 - Explain that Zotero may remain open unless it holds an exclusive database lock.
