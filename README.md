@@ -184,6 +184,23 @@ Use `--verify` for a full content audit even when file metadata appears unchange
 Manifest v1 workspaces are read automatically. The next successful export adds
 hashes and upgrades the manifest to v2; `status` and `--dry-run` never rewrite it.
 
+## Troubleshooting
+
+### Zotero database is locked
+
+Zotero can normally remain open because `zpm` uses read-only SQLite access and
+waits briefly for transient locks. An export may still be blocked while Zotero
+is syncing, upgrading its database, or performing maintenance.
+
+If `zpm` reports that the database is locked:
+
+1. Wait for Zotero synchronization or maintenance to finish, then retry.
+2. If it remains locked, close Zotero completely and run the command again.
+3. Use `zpm doctor --output ~/ResearchProjects` to check the configuration.
+
+`zpm` does not modify Zotero when a lock occurs. A lock error happens before the
+collection can be read or any export changes are applied.
+
 ## Attachment paths
 
 Stored Zotero attachments (`storage:...`), absolute linked paths, and `file://`

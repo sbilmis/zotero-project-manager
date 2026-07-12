@@ -18,6 +18,20 @@ class ZoteroDatabaseError(RuntimeError):
     """Raised when the Zotero database cannot be found or read."""
 
 
+def _database_error(operation: str, error: sqlite3.Error) -> ZoteroDatabaseError:
+    """Translate SQLite failures into actionable, user-facing errors."""
+
+    detail = str(error)
+    if "locked" in detail.casefold() or "busy" in detail.casefold():
+        return ZoteroDatabaseError(
+            "Zotero's database is temporarily locked, usually because Zotero is "
+            "syncing or performing maintenance. Wait for that operation to finish and "
+            "retry. If the lock persists, close Zotero completely and run the command "
+            "again. zpm requested read-only access and made no changes."
+        )
+    return ZoteroDatabaseError(f"{operation}: {detail}")
+
+
 def default_zotero_data_dir() -> Path:
     """Return the first existing standard Zotero data directory."""
 
@@ -96,7 +110,7 @@ class ZoteroDatabase:
             self._connection.execute("BEGIN")
         except sqlite3.Error as exc:
             self.close()
-            raise ZoteroDatabaseError(f"Could not read Zotero database: {exc}") from exc
+            raise _database_error("Could not read Zotero database", exc) from exc
 
     def close(self) -> None:
         """Close the read-only connection and remove any temporary snapshot."""
@@ -135,7 +149,7 @@ class ZoteroDatabase:
                 """
             ).fetchall()
         except sqlite3.Error as exc:
-            raise ZoteroDatabaseError(f"Could not list Zotero collections: {exc}") from exc
+            raise _database_error("Could not list Zotero collections", exc) from exc
         return [
             Collection(
                 id=int(row["collectionID"]),
@@ -185,7 +199,7 @@ class ZoteroDatabase:
                 (collection_id,),
             ).fetchall()
         except sqlite3.Error as exc:
-            raise ZoteroDatabaseError(f"Could not read collection items: {exc}") from exc
+            raise _database_error("Could not read collection items", exc) from exc
 
         attachments: list[ZoteroAttachment] = []
         for row in rows:
@@ -213,29 +227,35 @@ class ZoteroDatabase:
         return attachments
 
     def _item_metadata(self, item_id: int) -> dict[str, str]:
-        rows = self.connection.execute(
-            """
-            SELECT fields.fieldName, itemDataValues.value
-            FROM itemData
-            JOIN fields ON fields.fieldID = itemData.fieldID
-            JOIN itemDataValues ON itemDataValues.valueID = itemData.valueID
-            WHERE itemData.itemID = ? AND fields.fieldName IN ('title', 'date')
-            """,
-            (item_id,),
-        ).fetchall()
+        try:
+            rows = self.connection.execute(
+                """
+                SELECT fields.fieldName, itemDataValues.value
+                FROM itemData
+                JOIN fields ON fields.fieldID = itemData.fieldID
+                JOIN itemDataValues ON itemDataValues.valueID = itemData.valueID
+                WHERE itemData.itemID = ? AND fields.fieldName IN ('title', 'date')
+                """,
+                (item_id,),
+            ).fetchall()
+        except sqlite3.Error as exc:
+            raise _database_error("Could not read item metadata", exc) from exc
         return {str(row["fieldName"]): str(row["value"]) for row in rows}
 
     def _item_creators(self, item_id: int) -> tuple[str, ...]:
-        rows = self.connection.execute(
-            """
-            SELECT creators.firstName, creators.lastName, creators.fieldMode
-            FROM itemCreators
-            JOIN creators ON creators.creatorID = itemCreators.creatorID
-            WHERE itemCreators.itemID = ?
-            ORDER BY itemCreators.orderIndex
-            """,
-            (item_id,),
-        ).fetchall()
+        try:
+            rows = self.connection.execute(
+                """
+                SELECT creators.firstName, creators.lastName, creators.fieldMode
+                FROM itemCreators
+                JOIN creators ON creators.creatorID = itemCreators.creatorID
+                WHERE itemCreators.itemID = ?
+                ORDER BY itemCreators.orderIndex
+                """,
+                (item_id,),
+            ).fetchall()
+        except sqlite3.Error as exc:
+            raise _database_error("Could not read item creators", exc) from exc
         names: list[str] = []
         for row in rows:
             last_name = str(row["lastName"] or "").strip()

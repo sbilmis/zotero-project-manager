@@ -1,6 +1,10 @@
 from pathlib import Path
 
-from zotero_project_manager.zotero import ZoteroDatabase
+import sqlite3
+
+import pytest
+
+from zotero_project_manager.zotero import ZoteroDatabase, ZoteroDatabaseError
 
 
 def test_read_collections_and_resolve_storage_attachment(zotero_fixture: object) -> None:
@@ -26,3 +30,25 @@ def test_relative_link_requires_explicit_base(tmp_path: Path, zotero_fixture: ob
         assert database.resolve_attachment_path("attachments:folder/paper.pdf", "KEY") == (
             linked / "folder" / "paper.pdf"
         ).resolve()
+
+
+def test_locked_database_error_explains_how_to_retry(zotero_fixture: object) -> None:
+    fixture = zotero_fixture
+    database = ZoteroDatabase(fixture.data_dir, database_path=fixture.database)  # type: ignore[attr-defined]
+    database.open()
+    database.connection.execute("PRAGMA busy_timeout = 1")
+    blocker = sqlite3.connect(fixture.database)  # type: ignore[attr-defined]
+    blocker.execute("BEGIN EXCLUSIVE")
+    try:
+        with pytest.raises(ZoteroDatabaseError) as error:
+            database.list_collections()
+    finally:
+        blocker.rollback()
+        blocker.close()
+        database.close()
+
+    message = str(error.value)
+    assert "temporarily locked" in message
+    assert "close Zotero" in message
+    assert "read-only access" in message
+    assert "made no changes" in message

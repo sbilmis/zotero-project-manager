@@ -2,6 +2,13 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 0.2.1 — 2026-07-12
+
+- Explain that Zotero may remain open unless it holds an exclusive database lock.
+- Replace raw SQLite lock failures with instructions to wait for Zotero activity
+  to finish or close Zotero before retrying.
+- Guarantee the lock message states that `zpm` used read-only access and made no changes.
+
 ## 0.2.0 — 2026-07-12
 
 ### Added
