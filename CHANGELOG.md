@@ -2,6 +2,15 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 0.4.0 — 2026-07-12
+
+- Add dependency-free TOML configuration with XDG and `ZPM_CONFIG` path support.
+- Add `zpm config set` and `zpm config show` for global Zotero, output, and linked-file defaults.
+- Add reusable named projects through `zpm project add`, `list`, and `show`.
+- Add `zpm sync NAME` for one-command synchronization of saved collection groups.
+- Resolve relative configured paths from the configuration file directory.
+- Write configuration atomically and reject malformed settings with actionable errors.
+
 ## 0.3.0 — 2026-07-12
 
 - Add cross-platform CI for Python 3.11 and 3.14.

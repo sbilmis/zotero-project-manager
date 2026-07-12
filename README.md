@@ -63,6 +63,37 @@ zpm export --help
 zpm --version
 ```
 
+## Configuration and named projects
+
+Set global defaults once:
+
+```bash
+zpm config set --zotero-dir ~/Zotero --output ~/ResearchProjects
+zpm config show
+```
+
+The default configuration file is `~/.config/zpm/config.toml`. Override it with
+the global `--config PATH` option or the `ZPM_CONFIG` environment variable.
+
+Create a named project from one or more collections:
+
+```bash
+zpm project add ai "My-AI" "Claude"
+zpm project list
+zpm project show ai
+```
+
+Synchronize it from any directory:
+
+```bash
+zpm sync ai
+zpm sync ai --dry-run
+```
+
+A named project can save recursive traversal, non-PDF inclusion, pruning, full
+hash verification, and its own output directory. Use `--force` with
+`zpm project add` to replace an existing project definition.
+
 ## Safety model
 
 - The Zotero database is opened with SQLite `mode=ro` and `PRAGMA query_only`.
@@ -239,6 +270,7 @@ src/zotero_project_manager/
     manifest.py     versioned manifest serialization
     models.py       shared domain dataclasses
     diagnostics.py  read-only doctor checks
+    config.py       TOML defaults and named projects
     utils.py        logging and path safety helpers
 ```
 
