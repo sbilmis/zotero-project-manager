@@ -72,6 +72,15 @@ def zotero_fixture(tmp_path: Path) -> ZoteroFixture:
             creatorID INTEGER NOT NULL,
             orderIndex INTEGER NOT NULL
         );
+        CREATE TABLE tags (
+            tagID INTEGER PRIMARY KEY,
+            name TEXT NOT NULL
+        );
+        CREATE TABLE itemTags (
+            itemID INTEGER NOT NULL,
+            tagID INTEGER NOT NULL,
+            type INTEGER NOT NULL DEFAULT 0
+        );
         """
     )
     connection.executemany(
@@ -104,7 +113,7 @@ def zotero_fixture(tmp_path: Path) -> ZoteroFixture:
     )
     connection.executemany(
         "INSERT INTO fields VALUES (?, ?)",
-        [(1, "title"), (2, "date")],
+        [(1, "title"), (2, "date"), (3, "DOI")],
     )
     connection.executemany(
         "INSERT INTO itemDataValues VALUES (?, ?)",
@@ -113,11 +122,12 @@ def zotero_fixture(tmp_path: Path) -> ZoteroFixture:
             (2, "2021"),
             (3, "Attention Is All You Need"),
             (4, "2017-06-12"),
+            (5, "10.5555/attention"),
         ],
     )
     connection.executemany(
         "INSERT INTO itemData VALUES (?, ?, ?)",
-        [(100, 1, 1), (100, 2, 2), (200, 1, 3), (200, 2, 4)],
+        [(100, 1, 1), (100, 2, 2), (200, 1, 3), (200, 2, 4), (200, 3, 5)],
     )
     connection.executemany(
         "INSERT INTO creators VALUES (?, ?, ?, ?)",
@@ -126,6 +136,10 @@ def zotero_fixture(tmp_path: Path) -> ZoteroFixture:
     connection.executemany(
         "INSERT INTO itemCreators VALUES (?, ?, ?)",
         [(100, 1, 0), (200, 2, 0)],
+    )
+    connection.executemany("INSERT INTO tags VALUES (?, ?)", [(1, "AI"), (2, "Book")])
+    connection.executemany(
+        "INSERT INTO itemTags VALUES (?, ?, ?)", [(100, 2, 0), (200, 1, 0)]
     )
     connection.commit()
     connection.close()

@@ -29,6 +29,7 @@ class ProjectConfig:
     include_non_pdf: bool = False
     prune: bool = False
     verify: bool = False
+    metadata: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +94,7 @@ def load_config(path: Path | None = None) -> AppConfig:
             include_non_pdf=_boolean(values, "include_non_pdf", False, name),
             prune=_boolean(values, "prune", False, name),
             verify=_boolean(values, "verify", False, name),
+            metadata=_boolean(values, "metadata", True, name),
         )
     return AppConfig(
         path=config_path,
@@ -133,6 +135,7 @@ def save_config(config: AppConfig) -> None:
                 f"include_non_pdf = {str(project.include_non_pdf).lower()}",
                 f"prune = {str(project.prune).lower()}",
                 f"verify = {str(project.verify).lower()}",
+                f"metadata = {str(project.metadata).lower()}",
             ]
         )
     content = "\n".join(lines) + "\n"
@@ -159,6 +162,7 @@ def make_project(
     include_non_pdf: bool = False,
     prune: bool = False,
     verify: bool = False,
+    metadata: bool = True,
 ) -> ProjectConfig:
     """Validate and construct a named project."""
 
@@ -173,6 +177,7 @@ def make_project(
         include_non_pdf=include_non_pdf,
         prune=prune,
         verify=verify,
+        metadata=metadata,
     )
 
 

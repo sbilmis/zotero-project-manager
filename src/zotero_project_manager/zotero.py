@@ -222,6 +222,8 @@ class ZoteroDatabase:
                     content_type=content_type,
                     source_path=self.resolve_attachment_path(original_path, attachment_key),
                     original_path=original_path,
+                    doi=metadata.get("DOI"),
+                    tags=self._item_tags(item_id),
                 )
             )
         return attachments
@@ -234,7 +236,7 @@ class ZoteroDatabase:
                 FROM itemData
                 JOIN fields ON fields.fieldID = itemData.fieldID
                 JOIN itemDataValues ON itemDataValues.valueID = itemData.valueID
-                WHERE itemData.itemID = ? AND fields.fieldName IN ('title', 'date')
+                WHERE itemData.itemID = ? AND fields.fieldName IN ('title', 'date', 'DOI')
                 """,
                 (item_id,),
             ).fetchall()
@@ -264,6 +266,22 @@ class ZoteroDatabase:
             if name:
                 names.append(name)
         return tuple(names)
+
+    def _item_tags(self, item_id: int) -> tuple[str, ...]:
+        try:
+            rows = self.connection.execute(
+                """
+                SELECT DISTINCT tags.name
+                FROM itemTags
+                JOIN tags ON tags.tagID = itemTags.tagID
+                WHERE itemTags.itemID = ?
+                ORDER BY tags.name COLLATE NOCASE
+                """,
+                (item_id,),
+            ).fetchall()
+        except sqlite3.Error as exc:
+            raise _database_error("Could not read item tags", exc) from exc
+        return tuple(str(row["name"]) for row in rows)
 
     def resolve_attachment_path(self, stored_path: str, attachment_key: str) -> Path | None:
         """Resolve Zotero's storage, absolute, URI, or linked-relative path syntax."""

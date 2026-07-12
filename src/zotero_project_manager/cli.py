@@ -179,6 +179,13 @@ def export(
         bool,
         typer.Option("--verify", help="Recompute SHA-256 hashes even when timestamps match."),
     ] = False,
+    metadata: Annotated[
+        bool,
+        typer.Option(
+            "--metadata/--no-metadata",
+            help="Generate workspace metadata.json and INDEX.md files.",
+        ),
+    ] = True,
     pdf_only: Annotated[
         bool,
         typer.Option(
@@ -235,6 +242,7 @@ def export(
                 dry_run=dry_run,
                 prune=prune,
                 verify_hashes=verify,
+                export_metadata=metadata,
             )
             stats = exporter.export_many(selected, forest)
     except (ZoteroDatabaseError, CollectionError, ExportError, OSError) as exc:
@@ -388,6 +396,10 @@ def add_project(
     verify: Annotated[
         bool, typer.Option("--verify", help="Fully verify hashes during sync.")
     ] = False,
+    metadata: Annotated[
+        bool,
+        typer.Option("--metadata/--no-metadata", help="Generate metadata during sync."),
+    ] = True,
     force: Annotated[
         bool, typer.Option("--force", help="Replace an existing project with this name.")
     ] = False,
@@ -407,6 +419,7 @@ def add_project(
             include_non_pdf=include_non_pdf,
             prune=prune,
             verify=verify,
+            metadata=metadata,
         )
         updated = config.with_project(project)
         save_config(updated)
@@ -506,6 +519,7 @@ def show_project(
     typer.echo(f"Include non-PDF: {project.include_non_pdf}")
     typer.echo(f"Prune: {project.prune}")
     typer.echo(f"Verify: {project.verify}")
+    typer.echo(f"Metadata: {project.metadata}")
 
 
 @app.command()
@@ -545,6 +559,7 @@ def sync(
                 dry_run=dry_run,
                 prune=project.prune,
                 verify_hashes=project.verify,
+                export_metadata=project.metadata,
             ).export_many(selected, forest)
     except (ZoteroDatabaseError, CollectionError, ExportError, OSError) as exc:
         typer.echo(f"Error: {exc}", err=True)

@@ -14,6 +14,12 @@ from pathlib import Path
 from .collections import collection_paths, find_node
 from .filenames import attachment_filename, choose_available_name, sanitize_component
 from .manifest import Manifest, ManifestEntry, load_manifest, write_manifest
+from .metadata import (
+    MetadataEntry,
+    MetadataError,
+    validate_metadata_targets,
+    write_metadata_files,
+)
 from .models import Collection, CollectionNode, ExportStats, SyncChange, ZoteroAttachment
 from .utils import is_within, sha256_file
 from .zotero import ZoteroDatabase
@@ -41,6 +47,7 @@ class CollectionExporter:
         dry_run: bool = False,
         prune: bool = False,
         verify_hashes: bool = False,
+        export_metadata: bool = True,
     ) -> None:
         self.database = database
         self.output_root = output_root.expanduser().resolve()
@@ -50,6 +57,7 @@ class CollectionExporter:
         self.dry_run = dry_run
         self.prune = prune
         self.verify_hashes = verify_hashes
+        self.export_metadata = export_metadata
         self._digest_cache: dict[tuple[Path, int, int], str] = {}
         if is_within(self.output_root, database.data_dir):
             raise ExportError(
@@ -90,6 +98,11 @@ class CollectionExporter:
                 f"Destination manifest belongs to collection {existing_manifest.collection_key}, "
                 f"not {root.collection.key}: {workspace}"
             )
+        if self.export_metadata and not self.dry_run:
+            try:
+                validate_metadata_targets(workspace)
+            except MetadataError as exc:
+                raise ExportError(str(exc)) from exc
 
         gathered = self._gather(root)
         original_previous = self._previous_entries(existing_manifest)
@@ -107,6 +120,7 @@ class CollectionExporter:
         assignments = self._assign_destinations(workspace, gathered, previous)
 
         entries: list[ManifestEntry] = []
+        metadata_entries: list[MetadataEntry] = []
         changes: list[SyncChange] = []
         copied = updated = unchanged = missing = removed = pruned = protected = 0
 
@@ -146,6 +160,16 @@ class CollectionExporter:
                         source_size=0,
                         source_mtime_ns=0,
                         state="missing",
+                    )
+                )
+                metadata_entries.append(
+                    self._metadata_entry(
+                        collection,
+                        attachment,
+                        destination_path=relative_destination,
+                        source_path=str(source or attachment.original_path),
+                        state="missing",
+                        source_sha256=prior.source_sha256 if prior else None,
                     )
                 )
                 continue
@@ -195,6 +219,16 @@ class CollectionExporter:
                     destination_size=destination_stat.st_size,
                     destination_mtime_ns=destination_stat.st_mtime_ns,
                     state="active",
+                )
+            )
+            metadata_entries.append(
+                self._metadata_entry(
+                    collection,
+                    attachment,
+                    destination_path=relative_destination,
+                    source_path=str(source),
+                    state="active",
+                    source_sha256=source_digest,
                 )
             )
 
@@ -269,6 +303,11 @@ class CollectionExporter:
             )
             if self.prune:
                 self._remove_empty_managed_directories(workspace, changes)
+            if self.export_metadata:
+                try:
+                    write_metadata_files(workspace, manifest, metadata_entries)
+                except MetadataError as exc:
+                    raise ExportError(str(exc)) from exc
 
         return ExportStats(
             collection_name=root.collection.name,
@@ -299,6 +338,32 @@ class CollectionExporter:
             )
             gathered.extend((collection, relative_path, item) for item in attachments)
         return gathered
+
+    @staticmethod
+    def _metadata_entry(
+        collection: Collection,
+        attachment: ZoteroAttachment,
+        *,
+        destination_path: str,
+        source_path: str,
+        state: str,
+        source_sha256: str | None,
+    ) -> MetadataEntry:
+        return MetadataEntry(
+            collection_key=collection.key,
+            item_key=attachment.item_key,
+            attachment_key=attachment.attachment_key,
+            title=attachment.title,
+            date=attachment.date,
+            creators=attachment.creators,
+            doi=attachment.doi,
+            tags=attachment.tags,
+            content_type=attachment.content_type,
+            source_path=source_path,
+            destination_path=destination_path,
+            state=state,
+            sha256=source_sha256,
+        )
 
     def _reconcile_readded(
         self,

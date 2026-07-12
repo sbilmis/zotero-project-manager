@@ -16,7 +16,13 @@ def test_read_collections_and_resolve_storage_attachment(zotero_fixture: object)
         assert len(attachments) == 1
         assert attachments[0].title == "Deep Learning with Python"
         assert attachments[0].creators == ("Chollet",)
+        assert attachments[0].doi is None
+        assert attachments[0].tags == ("Book",)
         assert attachments[0].source_path == fixture.first_pdf  # type: ignore[attr-defined]
+
+        root_attachment = database.attachments_for_collection(1)[0]
+        assert root_attachment.doi == "10.5555/attention"
+        assert root_attachment.tags == ("AI",)
 
 
 def test_relative_link_requires_explicit_base(tmp_path: Path, zotero_fixture: object) -> None:

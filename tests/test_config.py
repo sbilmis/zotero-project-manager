@@ -29,6 +29,7 @@ def test_config_round_trip_with_named_project(tmp_path: Path) -> None:
     )
     save_config(expected)
     assert load_config(path) == expected
+    assert load_config(path).projects["ai"].metadata is True
 
 
 def test_relative_config_paths_resolve_from_config_directory(tmp_path: Path) -> None:
@@ -51,4 +52,3 @@ def test_invalid_project_name_is_rejected() -> None:
 def test_missing_config_returns_empty_defaults(tmp_path: Path) -> None:
     path = tmp_path / "missing.toml"
     assert load_config(path) == AppConfig(path=path)
-

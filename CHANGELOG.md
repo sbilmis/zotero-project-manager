@@ -2,6 +2,16 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 0.5.0 — 2026-07-12
+
+- Read DOI and tag metadata directly from Zotero without modifying its database.
+- Generate machine-readable `metadata.json` for current active and missing attachments.
+- Generate a linked `INDEX.md` table with titles, creators, years, DOI, tags, and files.
+- Add metadata generation to direct exports and named projects, enabled by default.
+- Add `--no-metadata` for workspaces that do not want generated metadata artifacts.
+- Refuse to replace existing `metadata.json` or `INDEX.md` files unless they carry zpm's
+  generated-file marker.
+
 ## 0.4.0 — 2026-07-12
 
 - Add dependency-free TOML configuration with XDG and `ZPM_CONFIG` path support.

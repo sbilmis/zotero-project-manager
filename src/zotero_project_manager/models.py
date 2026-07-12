@@ -39,6 +39,8 @@ class ZoteroAttachment:
     content_type: str | None
     source_path: Path | None
     original_path: str
+    doi: str | None = None
+    tags: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
