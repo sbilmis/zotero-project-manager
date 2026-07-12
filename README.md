@@ -11,8 +11,7 @@ versioned JSON manifest.
 
 ## Quick start: export `My-AI`
 
-On this Mac, `zpm` is installed as a user-local command and can be run from any
-directory. Export `My-AI` with:
+After installation, `zpm` can be run from any directory. Export `My-AI` with:
 
 ```bash
 zpm export "My-AI" --output ~/ResearchProjects
@@ -126,18 +125,25 @@ Always keep independent backups of important research data.
 
 ## Requirements and installation
 
-- Python 3.11 or newer
+- macOS with Homebrew, or Python 3.11 or newer
 
-Install the current GitHub release globally with `pipx`:
+The recommended macOS installation is Homebrew:
+
+```bash
+brew install sbilmis/tap/zpm
+```
+
+Upgrade a Homebrew installation with:
+
+```bash
+brew update
+brew upgrade zpm
+```
+
+Alternatively, install the published Python package globally with `pipx`:
 
 ```bash
 brew install pipx
-pipx install git+https://github.com/sbilmis/zotero-project-manager.git
-```
-
-After the first PyPI release is published, the shorter command is:
-
-```bash
 pipx install zotero-project-manager
 ```
 
@@ -294,7 +300,8 @@ src/zotero_project_manager/
     utils.py        logging and path safety helpers
 ```
 
-## Non-goals for v0.2
+## Current non-goals and roadmap
 
 Better BibTeX, annotation export, DEVONthink or NotebookLM automation, watch mode,
-a GUI, and symlink mode are not implemented yet.
+a GUI, and symlink mode are not implemented in v0.5.0. They remain possible
+future additions; Zotero continues to be the source of truth.
