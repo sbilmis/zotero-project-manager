@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from hashlib import sha256
 from pathlib import Path
 
 
@@ -24,3 +25,13 @@ def is_within(path: Path, parent: Path) -> bool:
     except ValueError:
         return False
     return True
+
+
+def sha256_file(path: Path, *, chunk_size: int = 1024 * 1024) -> str:
+    """Return the SHA-256 digest of a file without loading it into memory."""
+
+    digest = sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(chunk_size), b""):
+            digest.update(chunk)
+    return digest.hexdigest()

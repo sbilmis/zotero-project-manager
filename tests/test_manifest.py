@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 
 from zotero_project_manager.manifest import (
@@ -36,3 +37,34 @@ def test_invalid_manifest_is_ignored(tmp_path: Path) -> None:
     path = tmp_path / "manifest.json"
     path.write_text("not-json", encoding="utf-8")
     assert load_manifest(path) is None
+
+
+def test_v1_manifest_is_migrated_in_memory(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.json"
+    path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "exported_at": "2026-07-12T10:30:00+00:00",
+                "collection_key": "COLLECTION",
+                "collection_name": "Research",
+                "items": [
+                    {
+                        "collection_key": "COLLECTION",
+                        "item_key": "ITEM",
+                        "attachment_key": "ATTACHMENT",
+                        "source_path": "/zotero/source.pdf",
+                        "destination_path": "paper.pdf",
+                        "source_size": 42,
+                        "source_mtime_ns": 123456,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    manifest = load_manifest(path)
+    assert manifest is not None
+    assert manifest.version == 2
+    assert manifest.items[0].source_sha256 is None
+    assert manifest.items[0].state == "active"

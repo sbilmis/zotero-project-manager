@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 
-MANIFEST_VERSION = 1
+MANIFEST_VERSION = 2
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,6 +25,10 @@ class ManifestEntry:
     destination_path: str
     source_size: int
     source_mtime_ns: int
+    source_sha256: str | None = None
+    destination_size: int = 0
+    destination_mtime_ns: int = 0
+    state: str = "active"
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,14 +80,26 @@ def load_manifest(path: Path) -> Manifest | None:
         return None
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
-        if payload.get("version") != MANIFEST_VERSION:
+        version = int(payload.get("version", 0))
+        if version not in {1, MANIFEST_VERSION}:
             return None
+        items: list[ManifestEntry] = []
+        for item in payload["items"]:
+            if version == 1:
+                item = {
+                    **item,
+                    "source_sha256": None,
+                    "destination_size": int(item.get("source_size", 0)),
+                    "destination_mtime_ns": int(item.get("source_mtime_ns", 0)),
+                    "state": "active",
+                }
+            items.append(ManifestEntry(**item))
         return Manifest(
-            version=int(payload["version"]),
+            version=MANIFEST_VERSION,
             exported_at=str(payload["exported_at"]),
             collection_key=str(payload["collection_key"]),
             collection_name=str(payload["collection_name"]),
-            items=tuple(ManifestEntry(**item) for item in payload["items"]),
+            items=tuple(items),
         )
     except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
         return None

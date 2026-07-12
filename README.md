@@ -4,9 +4,9 @@
 remains the source of truth; `zpm` only reads its database and attachments and
 writes into a separate output directory.
 
-The initial release supports recursive collection export, multiple collections,
-portable metadata-based filenames, incremental updates, dry runs, and a
-versioned JSON manifest.
+The current release supports recursive collection export, multiple collections,
+portable metadata-based filenames, incremental updates, SHA-256 verification,
+safe pruning, dry runs, diagnostics, and a versioned JSON manifest.
 
 ## Quick start: export `My-AI`
 
@@ -33,10 +33,32 @@ Run the same `zpm export` command whenever the Zotero collection changes. The
 manifest makes the update incremental: new or changed PDFs are copied and
 unchanged PDFs are left alone.
 
+Inspect changes without writing anything:
+
+```bash
+zpm status "My-AI" --output ~/ResearchProjects
+```
+
+Preview files removed from Zotero that can be safely pruned:
+
+```bash
+zpm status "My-AI" --output ~/ResearchProjects --prune
+```
+
+After reviewing the preview, apply safe pruning:
+
+```bash
+zpm export "My-AI" --output ~/ResearchProjects --prune
+```
+
+Only manifest-owned files whose SHA-256 still matches are deleted. Files changed
+outside `zpm`, files without a trusted hash, and unsafe paths are protected.
+
 Other useful global commands:
 
 ```bash
 zpm list
+zpm doctor --output ~/ResearchProjects
 zpm export --help
 zpm --version
 ```
@@ -131,6 +153,8 @@ Useful options:
 --recursive / --no-recursive       Include descendants (default: recursive)
 --pdf-only / --include-non-pdf     Attachment filter (default: PDF only)
 --dry-run                          Show counts without writing
+--prune                            Safely remove hash-verified stale exports
+--verify                           Fully recompute source and destination hashes
 --overwrite                        Adopt an unmanaged destination
 --verbose                          Enable diagnostic messages
 --linked-attachment-base-dir PATH  Resolve Zotero relative linked files
@@ -144,16 +168,21 @@ the usable keys.
 ## Incremental behavior
 
 Each workspace contains `manifest.json` and `README.md`. On later runs, `zpm`
-uses the recorded source size and nanosecond modification time to:
+uses recorded source and destination metadata plus SHA-256 digests to:
 
 - leave unchanged files alone;
 - replace changed managed files;
 - copy newly discovered files;
 - report missing source attachments without deleting an earlier export.
+- reconcile identical files re-added under a new Zotero attachment key;
+- track files removed from the collection until they are safely pruned.
 
 `--overwrite` is not needed for normal updates. It is the explicit opt-in for
 adopting an existing directory or replacing an unmanaged filename conflict.
-Pruning and content hashes are deliberately deferred beyond v0.1.
+Use `--verify` for a full content audit even when file metadata appears unchanged.
+
+Manifest v1 workspaces are read automatically. The next successful export adds
+hashes and upgrades the manifest to v2; `status` and `--dry-run` never rewrite it.
 
 ## Attachment paths
 
@@ -173,11 +202,11 @@ src/zotero_project_manager/
     filenames.py    portable filename generation and collisions
     manifest.py     versioned manifest serialization
     models.py       shared domain dataclasses
+    diagnostics.py  read-only doctor checks
     utils.py        logging and path safety helpers
 ```
 
-## Non-goals for v0.1
+## Non-goals for v0.2
 
 Better BibTeX, annotations, tags, DOI export, metadata sidecars, DEVONthink or
-NotebookLM automation, watch mode, pruning, hashing, a GUI, and symlink mode are
-not implemented yet.
+NotebookLM automation, watch mode, a GUI, and symlink mode are not implemented yet.

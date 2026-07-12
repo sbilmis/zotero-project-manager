@@ -52,3 +52,18 @@ class ExportStats:
     updated: int
     unchanged: int
     missing: int
+    removed: int = 0
+    pruned: int = 0
+    protected: int = 0
+    reconciled: int = 0
+    changes: tuple["SyncChange", ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class SyncChange:
+    """A planned or completed synchronization action."""
+
+    action: str
+    destination: Path
+    source: Path | None = None
+    detail: str | None = None
