@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from zotero_project_manager.collections import (
@@ -25,12 +27,12 @@ def test_hierarchy_and_recursive_paths() -> None:
     paths = collection_paths(forest[0])
     assert str(paths[1]) == "."
     assert str(paths[2]) == "Books"
-    assert str(paths[4]) == "Books/Deep"
+    assert paths[4] == Path("Books") / "Deep"
 
 
 def test_non_recursive_paths_only_include_root() -> None:
     forest = build_collection_forest(records())
-    assert collection_paths(forest[0], recursive=False) == {1: __import__("pathlib").Path()}
+    assert collection_paths(forest[0], recursive=False) == {1: Path()}
 
 
 def test_collection_tree_output_includes_keys() -> None:

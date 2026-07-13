@@ -51,8 +51,15 @@ def test_attachment_filename_does_not_duplicate_extension_in_title() -> None:
 def test_attachment_filename_supports_named_metadata_orders() -> None:
     attachment = make_attachment(title="A Paper", date="2024", creators=("Curie",))
     assert attachment_filename(attachment, "author_year_title") == "Curie - 2024 - A Paper.pdf"
+    assert attachment_filename(attachment, "author_title_year") == "Curie - A Paper - 2024.pdf"
     assert attachment_filename(attachment, "year_author_title") == "2024 - Curie - A Paper.pdf"
+    assert attachment_filename(attachment, "year_title_author") == "2024 - A Paper - Curie.pdf"
     assert attachment_filename(attachment, "title_author_year") == "A Paper - Curie - 2024.pdf"
+    assert attachment_filename(attachment, "title_year_author") == "A Paper - 2024 - Curie.pdf"
+    assert attachment_filename(attachment, "author_title") == "Curie - A Paper.pdf"
+    assert attachment_filename(attachment, "year_title") == "2024 - A Paper.pdf"
+    assert attachment_filename(attachment, "title_author") == "A Paper - Curie.pdf"
+    assert attachment_filename(attachment, "title_year") == "A Paper - 2024.pdf"
     assert attachment_filename(attachment, "title") == "A Paper.pdf"
 
 

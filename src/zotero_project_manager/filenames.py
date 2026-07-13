@@ -11,10 +11,15 @@ from .models import ZoteroAttachment
 DEFAULT_FILENAME_TEMPLATE = "author_year_title"
 FILENAME_TEMPLATES = (
     DEFAULT_FILENAME_TEMPLATE,
+    "author_title_year",
     "year_author_title",
+    "year_title_author",
     "title_author_year",
     "title_year_author",
-    "year_title_author",
+    "author_title",
+    "year_title",
+    "title_author",
+    "title_year",
     "title",
 )
 

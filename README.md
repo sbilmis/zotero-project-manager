@@ -160,11 +160,20 @@ zpm export "My-AI" --filename-template year_author_title
 Available presets are:
 
 - `author_year_title`
+- `author_title_year`
 - `year_author_title`
+- `year_title_author`
 - `title_author_year`
 - `title_year_author`
-- `year_title_author`
+- `author_title`
+- `year_title`
+- `title_author`
+- `title_year`
 - `title`
+
+The six three-part presets cover every possible ordering of author, year, and title.
+The shorter presets always retain the title while allowing the author or year to be
+omitted. Missing Zotero metadata is skipped gracefully in every preset.
 
 Set a global default:
 

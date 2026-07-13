@@ -11,8 +11,8 @@ All notable changes are documented here. This project follows semantic versionin
 - Convert Zotero child-note HTML into dependency-free, readable Markdown text.
 - Refuse to replace unmanaged annotation Markdown and update generated files only
   when their content changes.
-- Add filename ordering presets: `author_year_title`, `year_author_title`,
-  `title_author_year`, `title_year_author`, `year_title_author`, and `title`.
+- Add filename ordering presets covering every author/year/title permutation, plus
+  shorter author/title, year/title, title/author, title/year, and title-only forms.
 - Support filename preferences in direct exports, global configuration, and named projects.
 - Add manifest v3 to record the workspace filename template and prevent accidental
   in-place reorganization of an existing managed workspace.
