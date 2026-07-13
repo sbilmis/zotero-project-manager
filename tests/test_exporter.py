@@ -75,6 +75,119 @@ def test_metadata_generation_can_be_disabled(tmp_path: Path, zotero_fixture: obj
     assert not (output / "My-AI" / "INDEX.md").exists()
 
 
+def test_export_generates_annotation_and_child_note_markdown(
+    tmp_path: Path, zotero_fixture: object
+) -> None:
+    fixture = zotero_fixture
+    output = tmp_path / "exports"
+    with ZoteroDatabase(fixture.data_dir, database_path=fixture.database) as database:  # type: ignore[attr-defined]
+        records = database.list_collections()
+        stats = CollectionExporter(database, output, export_annotations=True).export_many(
+            [resolve_collection(records, "My-AI")], build_collection_forest(records)
+        )[0]
+
+    annotation_path = (
+        output
+        / "My-AI"
+        / "Annotations"
+        / "Books"
+        / "Chollet - 2021 - Deep Learning with Python.md"
+    )
+    content = annotation_path.read_text(encoding="utf-8")
+    assert stats.annotation_files == 2
+    assert stats.annotations == 1
+    assert stats.notes == 1
+    assert "Page 4 — Highlight" in content
+    assert "> Neural networks learn useful representations." in content
+    assert "Connect this to the current model." in content
+    assert "Reading notes" in content
+    assert "Compare models" in content
+    assert "zotero://open-pdf/library/items/ATTACH01?annotation=ANNOT001" in content
+
+
+def test_unchanged_annotation_markdown_is_not_rewritten(
+    tmp_path: Path, zotero_fixture: object
+) -> None:
+    fixture = zotero_fixture
+    output = tmp_path / "exports"
+    with ZoteroDatabase(fixture.data_dir, database_path=fixture.database) as database:  # type: ignore[attr-defined]
+        records = database.list_collections()
+        selected = resolve_collection(records, "My-AI")
+        forest = build_collection_forest(records)
+        exporter = CollectionExporter(database, output, export_annotations=True)
+        exporter.export_many([selected], forest)
+        annotation_path = (
+            output
+            / "My-AI"
+            / "Annotations"
+            / "Books"
+            / "Chollet - 2021 - Deep Learning with Python.md"
+        )
+        fixed_time = 1_700_000_000_000_000_000
+        os.utime(annotation_path, ns=(fixed_time, fixed_time))
+        exporter.export_many([selected], forest)
+    assert annotation_path.stat().st_mtime_ns == fixed_time
+
+
+def test_annotation_export_refuses_unmanaged_markdown(
+    tmp_path: Path, zotero_fixture: object
+) -> None:
+    fixture = zotero_fixture
+    output = tmp_path / "exports"
+    _initial_export(output, fixture)
+    unmanaged = (
+        output
+        / "My-AI"
+        / "Annotations"
+        / "Books"
+        / "Chollet - 2021 - Deep Learning with Python.md"
+    )
+    unmanaged.parent.mkdir(parents=True)
+    unmanaged.write_text("personal notes\n", encoding="utf-8")
+
+    with ZoteroDatabase(fixture.data_dir, database_path=fixture.database) as database:  # type: ignore[attr-defined]
+        records = database.list_collections()
+        with pytest.raises(ExportError, match="unmanaged annotation"):
+            CollectionExporter(database, output, export_annotations=True).export_many(
+                [resolve_collection(records, "My-AI")], build_collection_forest(records)
+            )
+    assert unmanaged.read_text(encoding="utf-8") == "personal notes\n"
+
+
+def test_filename_template_controls_new_workspace_names(
+    tmp_path: Path, zotero_fixture: object
+) -> None:
+    fixture = zotero_fixture
+    output = tmp_path / "exports"
+    with ZoteroDatabase(fixture.data_dir, database_path=fixture.database) as database:  # type: ignore[attr-defined]
+        records = database.list_collections()
+        CollectionExporter(
+            database, output, filename_template="year_author_title"
+        ).export_many(
+            [resolve_collection(records, "My-AI")], build_collection_forest(records)
+        )
+    assert (output / "My-AI" / "2017 - Vaswani - Attention Is All You Need.pdf").is_file()
+    manifest = load_manifest(output / "My-AI" / "manifest.json")
+    assert manifest is not None
+    assert manifest.filename_template == "year_author_title"
+
+
+def test_existing_workspace_rejects_filename_template_change(
+    tmp_path: Path, zotero_fixture: object
+) -> None:
+    fixture = zotero_fixture
+    output = tmp_path / "exports"
+    _initial_export(output, fixture)
+    with ZoteroDatabase(fixture.data_dir, database_path=fixture.database) as database:  # type: ignore[attr-defined]
+        records = database.list_collections()
+        with pytest.raises(ExportError, match="Workspace uses filename template"):
+            CollectionExporter(
+                database, output, filename_template="year_author_title"
+            ).export_many(
+                [resolve_collection(records, "My-AI")], build_collection_forest(records)
+            )
+
+
 def test_refuses_to_replace_unmanaged_metadata_artifact(
     tmp_path: Path, zotero_fixture: object
 ) -> None:
@@ -285,7 +398,10 @@ def test_readded_identical_attachment_reuses_managed_destination(
     new_source.parent.mkdir(parents=True)
     new_source.write_bytes(fixture.second_pdf.read_bytes())  # type: ignore[attr-defined]
     connection = sqlite3.connect(fixture.database)  # type: ignore[attr-defined]
-    connection.executemany("INSERT INTO items VALUES (?, ?)", [(300, "ITEM0003"), (301, "ATTACH03")])
+    connection.executemany(
+        "INSERT INTO items (itemID, key) VALUES (?, ?)",
+        [(300, "ITEM0003"), (301, "ATTACH03")],
+    )
     connection.execute("INSERT INTO collectionItems VALUES (?, ?)", (1, 300))
     connection.execute(
         "INSERT INTO itemAttachments VALUES (?, ?, ?, ?)",
@@ -319,7 +435,10 @@ def test_readded_attachment_does_not_reconcile_with_modified_stale_export(
     new_source.parent.mkdir(parents=True)
     new_source.write_bytes(fixture.second_pdf.read_bytes())  # type: ignore[attr-defined]
     connection = sqlite3.connect(fixture.database)  # type: ignore[attr-defined]
-    connection.executemany("INSERT INTO items VALUES (?, ?)", [(300, "ITEM0003"), (301, "ATTACH03")])
+    connection.executemany(
+        "INSERT INTO items (itemID, key) VALUES (?, ?)",
+        [(300, "ITEM0003"), (301, "ATTACH03")],
+    )
     connection.execute("INSERT INTO collectionItems VALUES (?, ?)", (1, 300))
     connection.execute(
         "INSERT INTO itemAttachments VALUES (?, ?, ?, ?)",

@@ -8,6 +8,21 @@ from pathlib import Path
 
 from .models import ZoteroAttachment
 
+DEFAULT_FILENAME_TEMPLATE = "author_year_title"
+FILENAME_TEMPLATES = (
+    DEFAULT_FILENAME_TEMPLATE,
+    "author_title_year",
+    "year_author_title",
+    "year_title_author",
+    "title_author_year",
+    "title_year_author",
+    "author_title",
+    "year_title",
+    "title_author",
+    "title_year",
+    "title",
+)
+
 _ILLEGAL = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 _SPACE = re.compile(r"\s+")
 _YEAR = re.compile(r"(?<!\d)(\d{4})(?!\d)")
@@ -45,8 +60,21 @@ def extract_year(date: str | None) -> str | None:
     return match.group(1) if match else None
 
 
-def attachment_filename(attachment: ZoteroAttachment) -> str:
-    """Build ``Author - Year - Title.ext`` with graceful metadata fallbacks."""
+def validate_filename_template(template: str) -> str:
+    """Return a supported filename template or raise ``ValueError``."""
+
+    normalized = template.strip().casefold()
+    if normalized not in FILENAME_TEMPLATES:
+        choices = ", ".join(FILENAME_TEMPLATES)
+        raise ValueError(f"Unknown filename template {template!r}; choose one of: {choices}")
+    return normalized
+
+
+def attachment_filename(
+    attachment: ZoteroAttachment,
+    template: str = DEFAULT_FILENAME_TEMPLATE,
+) -> str:
+    """Build a metadata filename using a validated named template."""
 
     source = attachment.source_path
     source_stem = source.stem if source else Path(attachment.original_path).stem
@@ -57,13 +85,16 @@ def attachment_filename(attachment: ZoteroAttachment) -> str:
     if title and extension != ".bin" and title.casefold().endswith(extension.casefold()):
         title = title[: -len(extension)].rstrip(" .")
 
-    parts: list[str] = []
-    if attachment.creators:
-        parts.append(attachment.creators[0])
+    author = attachment.creators[0] if attachment.creators else None
     year = extract_year(attachment.date)
-    if year:
-        parts.append(year)
-    parts.append(title or source_stem or attachment.item_key or "Untitled")
+    resolved_title = title or source_stem or attachment.item_key or "Untitled"
+    components = {
+        "author": author,
+        "year": year,
+        "title": resolved_title,
+    }
+    order = validate_filename_template(template).split("_")
+    parts = [components[field] for field in order if components[field]]
     stem = sanitize_component(" - ".join(part for part in parts if part))
     return f"{stem}{extension}"
 

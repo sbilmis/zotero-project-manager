@@ -44,6 +44,40 @@ class ZoteroAttachment:
 
 
 @dataclass(frozen=True, slots=True)
+class ZoteroAnnotation:
+    """A read-only Zotero PDF annotation."""
+
+    annotation_id: int
+    annotation_key: str
+    attachment_id: int
+    annotation_type: str
+    text: str | None
+    comment: str | None
+    color: str | None
+    page_label: str | None
+    sort_index: str
+    position: str
+    author_name: str | None
+    date_added: str
+    date_modified: str
+    tags: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ZoteroNote:
+    """A read-only child note belonging to a Zotero item or attachment."""
+
+    note_id: int
+    note_key: str
+    parent_item_id: int
+    title: str | None
+    content: str
+    date_added: str
+    date_modified: str
+    tags: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class ExportStats:
     """Counters produced by a single collection export."""
 
@@ -58,6 +92,9 @@ class ExportStats:
     pruned: int = 0
     protected: int = 0
     reconciled: int = 0
+    annotation_files: int = 0
+    annotations: int = 0
+    notes: int = 0
     changes: tuple["SyncChange", ...] = ()
 
 

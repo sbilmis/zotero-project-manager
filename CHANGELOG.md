@@ -2,6 +2,21 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 0.6.0 — 2026-07-13
+
+- Add opt-in `--annotations` export for PDF highlights, underlines, comments,
+  colors, page labels, annotation tags, image/ink metadata, and child notes.
+- Generate safe, hierarchy-preserving Markdown under `Annotations/`, including
+  links to exported files and local-library Zotero items.
+- Convert Zotero child-note HTML into dependency-free, readable Markdown text.
+- Refuse to replace unmanaged annotation Markdown and update generated files only
+  when their content changes.
+- Add filename ordering presets covering every author/year/title permutation, plus
+  shorter author/title, year/title, title/author, title/year, and title-only forms.
+- Support filename preferences in direct exports, global configuration, and named projects.
+- Add manifest v3 to record the workspace filename template and prevent accidental
+  in-place reorganization of an existing managed workspace.
+
 ## 0.5.0 — 2026-07-12
 
 - Read DOI and tag metadata directly from Zotero without modifying its database.
