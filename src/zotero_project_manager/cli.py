@@ -18,6 +18,7 @@ from .collections import (
 from .config import AppConfig, ConfigError, load_config, make_project, save_config
 from .diagnostics import run_diagnostics
 from .exporter import CollectionExporter, ExportError
+from .filenames import FILENAME_TEMPLATES, validate_filename_template
 from .models import ExportStats
 from .utils import configure_logging
 from .zotero import ZoteroDatabase, ZoteroDatabaseError, default_zotero_data_dir
@@ -90,17 +91,31 @@ def _linked_dir(explicit: Path | None, config: AppConfig) -> Path | None:
     return explicit or config.linked_attachment_base_dir
 
 
+def _filename_template(explicit: str | None, config: AppConfig) -> str:
+    try:
+        return validate_filename_template(explicit or config.filename_template)
+    except ValueError as exc:
+        raise ConfigError(str(exc)) from exc
+
+
 def _print_stats(stats: list[ExportStats], *, show_changes: bool = False) -> None:
     for result in stats:
         if show_changes:
             for change in result.changes:
                 detail = f" ({change.detail})" if change.detail else ""
                 typer.echo(f"{change.action.upper():10} {change.destination}{detail}")
+        annotation_summary = ""
+        if result.annotation_files:
+            annotation_summary = (
+                f", {result.annotation_files} annotation files "
+                f"({result.annotations} annotations, {result.notes} notes)"
+            )
         typer.echo(
             f"{result.collection_name}: {result.copied} new, {result.updated} changed, "
             f"{result.unchanged} unchanged, {result.missing} missing, "
             f"{result.removed} removed, {result.pruned} pruned, "
-            f"{result.protected} protected, {result.reconciled} reconciled "
+            f"{result.protected} protected, {result.reconciled} reconciled"
+            f"{annotation_summary} "
             f"-> {result.workspace}"
         )
 
@@ -186,6 +201,20 @@ def export(
             help="Generate workspace metadata.json and INDEX.md files.",
         ),
     ] = True,
+    annotations: Annotated[
+        bool,
+        typer.Option(
+            "--annotations/--no-annotations",
+            help="Export PDF annotations and child notes as generated Markdown.",
+        ),
+    ] = False,
+    filename_template: Annotated[
+        str | None,
+        typer.Option(
+            "--filename-template",
+            help="Filename order: " + ", ".join(FILENAME_TEMPLATES) + ".",
+        ),
+    ] = None,
     pdf_only: Annotated[
         bool,
         typer.Option(
@@ -243,9 +272,11 @@ def export(
                 prune=prune,
                 verify_hashes=verify,
                 export_metadata=metadata,
+                export_annotations=annotations,
+                filename_template=_filename_template(filename_template, config),
             )
             stats = exporter.export_many(selected, forest)
-    except (ZoteroDatabaseError, CollectionError, ExportError, OSError) as exc:
+    except (ZoteroDatabaseError, CollectionError, ConfigError, ExportError, OSError) as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 
@@ -281,6 +312,14 @@ def status(
         bool,
         typer.Option("--verify", help="Fully verify source and destination SHA-256 hashes."),
     ] = False,
+    annotations: Annotated[
+        bool,
+        typer.Option("--annotations/--no-annotations", help="Include annotation planning."),
+    ] = False,
+    filename_template: Annotated[
+        str | None,
+        typer.Option("--filename-template", help="Metadata filename ordering preset."),
+    ] = None,
     zotero_dir: Annotated[
         Path | None,
         typer.Option("--zotero-dir", help="Zotero data directory (default: auto-detect)."),
@@ -326,8 +365,10 @@ def status(
                 dry_run=True,
                 prune=prune,
                 verify_hashes=verify,
+                export_annotations=annotations,
+                filename_template=_filename_template(filename_template, config),
             ).export_many(selected, forest)
-    except (ZoteroDatabaseError, CollectionError, ExportError, OSError) as exc:
+    except (ZoteroDatabaseError, CollectionError, ConfigError, ExportError, OSError) as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     _print_stats(stats, show_changes=True)
@@ -400,6 +441,17 @@ def add_project(
         bool,
         typer.Option("--metadata/--no-metadata", help="Generate metadata during sync."),
     ] = True,
+    annotations: Annotated[
+        bool,
+        typer.Option(
+            "--annotations/--no-annotations",
+            help="Export PDF annotations and child notes during sync.",
+        ),
+    ] = False,
+    filename_template: Annotated[
+        str | None,
+        typer.Option("--filename-template", help="Metadata filename ordering preset."),
+    ] = None,
     force: Annotated[
         bool, typer.Option("--force", help="Replace an existing project with this name.")
     ] = False,
@@ -420,6 +472,8 @@ def add_project(
             prune=prune,
             verify=verify,
             metadata=metadata,
+            annotations=annotations,
+            filename_template=_filename_template(filename_template, config),
         )
         updated = config.with_project(project)
         save_config(updated)
@@ -443,30 +497,44 @@ def set_config(
         Path | None,
         typer.Option("--linked-attachment-base-dir", help="Default linked attachment base."),
     ] = None,
+    filename_template: Annotated[
+        str | None,
+        typer.Option("--filename-template", help="Default metadata filename ordering preset."),
+    ] = None,
 ) -> None:
     """Set one or more global configuration defaults."""
 
     config = _config(ctx)
-    if zotero_dir is None and output is None and linked_attachment_base_dir is None:
+    if (
+        zotero_dir is None
+        and output is None
+        and linked_attachment_base_dir is None
+        and filename_template is None
+    ):
         typer.echo("Error: Provide at least one setting to update", err=True)
         raise typer.Exit(code=1)
-    updated = replace(
-        config,
-        zotero_dir=(
-            zotero_dir.expanduser().resolve() if zotero_dir is not None else config.zotero_dir
-        ),
-        output_dir=(output.expanduser().resolve() if output is not None else config.output_dir),
-        linked_attachment_base_dir=(
-            linked_attachment_base_dir.expanduser().resolve()
-            if linked_attachment_base_dir is not None
-            else config.linked_attachment_base_dir
-        ),
-    )
     try:
+        updated = replace(
+            config,
+            zotero_dir=(
+                zotero_dir.expanduser().resolve()
+                if zotero_dir is not None
+                else config.zotero_dir
+            ),
+            output_dir=(
+                output.expanduser().resolve() if output is not None else config.output_dir
+            ),
+            linked_attachment_base_dir=(
+                linked_attachment_base_dir.expanduser().resolve()
+                if linked_attachment_base_dir is not None
+                else config.linked_attachment_base_dir
+            ),
+            filename_template=_filename_template(filename_template, config),
+        )
         save_config(updated)
         ctx.find_root().obj = updated
-    except OSError as exc:
-        typer.echo(f"Error: Could not write configuration: {exc}", err=True)
+    except (ConfigError, OSError) as exc:
+        typer.echo(f"Error: Could not update configuration: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     typer.echo(f"Updated {config.path}")
 
@@ -483,6 +551,7 @@ def show_config(ctx: typer.Context) -> None:
         "Linked attachment base: "
         f"{config.linked_attachment_base_dir or '(not configured)'}"
     )
+    typer.echo(f"Filename template: {config.filename_template}")
     typer.echo(f"Named projects: {len(config.projects)}")
 
 
@@ -520,6 +589,8 @@ def show_project(
     typer.echo(f"Prune: {project.prune}")
     typer.echo(f"Verify: {project.verify}")
     typer.echo(f"Metadata: {project.metadata}")
+    typer.echo(f"Annotations: {project.annotations}")
+    typer.echo(f"Filename template: {project.filename_template}")
 
 
 @app.command()
@@ -560,6 +631,8 @@ def sync(
                 prune=project.prune,
                 verify_hashes=project.verify,
                 export_metadata=project.metadata,
+                export_annotations=project.annotations,
+                filename_template=project.filename_template,
             ).export_many(selected, forest)
     except (ZoteroDatabaseError, CollectionError, ExportError, OSError) as exc:
         typer.echo(f"Error: {exc}", err=True)

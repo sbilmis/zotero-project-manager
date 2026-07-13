@@ -36,7 +36,9 @@ def zotero_fixture(tmp_path: Path) -> ZoteroFixture:
         );
         CREATE TABLE items (
             itemID INTEGER PRIMARY KEY,
-            key TEXT NOT NULL
+            key TEXT NOT NULL,
+            dateAdded TEXT NOT NULL DEFAULT '2026-07-01 10:00:00',
+            dateModified TEXT NOT NULL DEFAULT '2026-07-02 11:00:00'
         );
         CREATE TABLE collectionItems (
             collectionID INTEGER NOT NULL,
@@ -81,6 +83,25 @@ def zotero_fixture(tmp_path: Path) -> ZoteroFixture:
             tagID INTEGER NOT NULL,
             type INTEGER NOT NULL DEFAULT 0
         );
+        CREATE TABLE itemAnnotations (
+            itemID INTEGER PRIMARY KEY,
+            parentItemID INTEGER NOT NULL,
+            type INTEGER NOT NULL,
+            authorName TEXT,
+            text TEXT,
+            comment TEXT,
+            color TEXT,
+            pageLabel TEXT,
+            sortIndex TEXT NOT NULL,
+            position TEXT NOT NULL,
+            isExternal INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE TABLE itemNotes (
+            itemID INTEGER PRIMARY KEY,
+            parentItemID INTEGER,
+            note TEXT,
+            title TEXT
+        );
         """
     )
     connection.executemany(
@@ -92,10 +113,12 @@ def zotero_fixture(tmp_path: Path) -> ZoteroFixture:
         ],
     )
     connection.executemany(
-        "INSERT INTO items VALUES (?, ?)",
+        "INSERT INTO items (itemID, key) VALUES (?, ?)",
         [
             (100, "ITEM0001"),
             (101, "ATTACH01"),
+            (102, "ANNOT001"),
+            (103, "NOTE0001"),
             (200, "ITEM0002"),
             (201, "ATTACH02"),
         ],
@@ -137,9 +160,38 @@ def zotero_fixture(tmp_path: Path) -> ZoteroFixture:
         "INSERT INTO itemCreators VALUES (?, ?, ?)",
         [(100, 1, 0), (200, 2, 0)],
     )
-    connection.executemany("INSERT INTO tags VALUES (?, ?)", [(1, "AI"), (2, "Book")])
     connection.executemany(
-        "INSERT INTO itemTags VALUES (?, ?, ?)", [(100, 2, 0), (200, 1, 0)]
+        "INSERT INTO tags VALUES (?, ?)",
+        [(1, "AI"), (2, "Book"), (3, "Important"), (4, "Research note")],
+    )
+    connection.executemany(
+        "INSERT INTO itemTags VALUES (?, ?, ?)",
+        [(100, 2, 0), (102, 3, 0), (103, 4, 0), (200, 1, 0)],
+    )
+    connection.execute(
+        "INSERT INTO itemAnnotations VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            102,
+            101,
+            1,
+            "Selcuk",
+            "Neural networks learn useful representations.",
+            "Connect this to the current model.",
+            "#ffd400",
+            "4",
+            "00003|000001|00000",
+            '{"pageIndex": 3, "rects": [[1, 2, 3, 4]]}',
+            0,
+        ),
+    )
+    connection.execute(
+        "INSERT INTO itemNotes VALUES (?, ?, ?, ?)",
+        (
+            103,
+            100,
+            "<div><p><strong>Key idea</strong> for the project.</p><ul><li>Compare models</li></ul></div>",
+            "Reading notes",
+        ),
     )
     connection.commit()
     connection.close()

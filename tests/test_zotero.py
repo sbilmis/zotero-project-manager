@@ -24,6 +24,17 @@ def test_read_collections_and_resolve_storage_attachment(zotero_fixture: object)
         assert root_attachment.doi == "10.5555/attention"
         assert root_attachment.tags == ("AI",)
 
+        annotations = database.annotations_for_attachment(101)
+        assert len(annotations) == 1
+        assert annotations[0].annotation_type == "highlight"
+        assert annotations[0].page_label == "4"
+        assert annotations[0].tags == ("Important",)
+
+        notes = database.child_notes_for_item(100, attachment_id=101)
+        assert len(notes) == 1
+        assert notes[0].title == "Reading notes"
+        assert notes[0].tags == ("Research note",)
+
 
 def test_relative_link_requires_explicit_base(tmp_path: Path, zotero_fixture: object) -> None:
     fixture = zotero_fixture

@@ -11,6 +11,8 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
+from .filenames import DEFAULT_FILENAME_TEMPLATE, validate_filename_template
+
 _PROJECT_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 
 
@@ -30,6 +32,8 @@ class ProjectConfig:
     prune: bool = False
     verify: bool = False
     metadata: bool = True
+    annotations: bool = False
+    filename_template: str = DEFAULT_FILENAME_TEMPLATE
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +44,7 @@ class AppConfig:
     zotero_dir: Path | None = None
     output_dir: Path | None = None
     linked_attachment_base_dir: Path | None = None
+    filename_template: str = DEFAULT_FILENAME_TEMPLATE
     projects: dict[str, ProjectConfig] = field(default_factory=dict)
 
     def with_project(self, project: ProjectConfig) -> "AppConfig":
@@ -95,6 +100,11 @@ def load_config(path: Path | None = None) -> AppConfig:
             prune=_boolean(values, "prune", False, name),
             verify=_boolean(values, "verify", False, name),
             metadata=_boolean(values, "metadata", True, name),
+            annotations=_boolean(values, "annotations", False, name),
+            filename_template=_filename_template(
+                values.get("filename_template", payload.get("filename_template")),
+                context=f"Project {name!r}",
+            ),
         )
     return AppConfig(
         path=config_path,
@@ -102,6 +112,9 @@ def load_config(path: Path | None = None) -> AppConfig:
         output_dir=_optional_path(payload.get("output_dir"), config_path),
         linked_attachment_base_dir=_optional_path(
             payload.get("linked_attachment_base_dir"), config_path
+        ),
+        filename_template=_filename_template(
+            payload.get("filename_template"), context="Global configuration"
         ),
         projects=projects,
     )
@@ -118,6 +131,7 @@ def save_config(config: AppConfig) -> None:
     ):
         if value is not None:
             lines.append(f"{key} = {_quote(str(value))}")
+    lines.append(f"filename_template = {_quote(config.filename_template)}")
     for name in sorted(config.projects, key=str.casefold):
         project = config.projects[name]
         lines.extend(
@@ -136,6 +150,8 @@ def save_config(config: AppConfig) -> None:
                 f"prune = {str(project.prune).lower()}",
                 f"verify = {str(project.verify).lower()}",
                 f"metadata = {str(project.metadata).lower()}",
+                f"annotations = {str(project.annotations).lower()}",
+                f"filename_template = {_quote(project.filename_template)}",
             ]
         )
     content = "\n".join(lines) + "\n"
@@ -163,12 +179,18 @@ def make_project(
     prune: bool = False,
     verify: bool = False,
     metadata: bool = True,
+    annotations: bool = False,
+    filename_template: str = DEFAULT_FILENAME_TEMPLATE,
 ) -> ProjectConfig:
     """Validate and construct a named project."""
 
     _validate_project_name(name)
     if not collections or any(not selector for selector in collections):
         raise ConfigError("A named project requires at least one collection")
+    try:
+        validated_template = validate_filename_template(filename_template)
+    except ValueError as exc:
+        raise ConfigError(str(exc)) from exc
     return ProjectConfig(
         name=name,
         collections=tuple(collections),
@@ -178,6 +200,8 @@ def make_project(
         prune=prune,
         verify=verify,
         metadata=metadata,
+        annotations=annotations,
+        filename_template=validated_template,
     )
 
 
@@ -205,6 +229,17 @@ def _boolean(values: dict[str, Any], key: str, default: bool, project: str) -> b
     if not isinstance(value, bool):
         raise ConfigError(f"Project {project!r} field {key!r} must be true or false")
     return value
+
+
+def _filename_template(value: Any, *, context: str) -> str:
+    if value is None:
+        return DEFAULT_FILENAME_TEMPLATE
+    if not isinstance(value, str) or not value:
+        raise ConfigError(f"{context} filename_template must be a non-empty string")
+    try:
+        return validate_filename_template(value)
+    except ValueError as exc:
+        raise ConfigError(f"{context}: {exc}") from exc
 
 
 def _quote(value: str) -> str:

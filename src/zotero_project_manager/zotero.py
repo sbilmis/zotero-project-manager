@@ -9,9 +9,17 @@ from pathlib import Path
 from types import TracebackType
 from urllib.parse import unquote, urlparse
 
-from .models import Collection, ZoteroAttachment
+from .models import Collection, ZoteroAnnotation, ZoteroAttachment, ZoteroNote
 
 LOGGER = logging.getLogger(__name__)
+_ANNOTATION_TYPES = {
+    1: "highlight",
+    2: "note",
+    3: "image",
+    4: "ink",
+    5: "underline",
+    6: "text",
+}
 
 
 class ZoteroDatabaseError(RuntimeError):
@@ -227,6 +235,101 @@ class ZoteroDatabase:
                 )
             )
         return attachments
+
+    def annotations_for_attachment(self, attachment_id: int) -> tuple[ZoteroAnnotation, ...]:
+        """Return annotations for one attachment in Zotero display order."""
+
+        try:
+            rows = self.connection.execute(
+                """
+                SELECT
+                    annotations.itemID AS annotationID,
+                    items.key AS annotationKey,
+                    annotations.parentItemID AS attachmentID,
+                    annotations.type AS annotationType,
+                    annotations.text,
+                    annotations.comment,
+                    annotations.color,
+                    annotations.pageLabel,
+                    annotations.sortIndex,
+                    annotations.position,
+                    annotations.authorName,
+                    items.dateAdded,
+                    items.dateModified
+                FROM itemAnnotations AS annotations
+                JOIN items ON items.itemID = annotations.itemID
+                WHERE annotations.parentItemID = ?
+                ORDER BY annotations.sortIndex, annotations.itemID
+                """,
+                (attachment_id,),
+            ).fetchall()
+        except sqlite3.Error as exc:
+            raise _database_error("Could not read attachment annotations", exc) from exc
+        return tuple(
+            ZoteroAnnotation(
+                annotation_id=int(row["annotationID"]),
+                annotation_key=str(row["annotationKey"]),
+                attachment_id=int(row["attachmentID"]),
+                annotation_type=_ANNOTATION_TYPES.get(
+                    int(row["annotationType"]), f"unknown-{row['annotationType']}"
+                ),
+                text=str(row["text"]) if row["text"] else None,
+                comment=str(row["comment"]) if row["comment"] else None,
+                color=str(row["color"]) if row["color"] else None,
+                page_label=str(row["pageLabel"]) if row["pageLabel"] else None,
+                sort_index=str(row["sortIndex"]),
+                position=str(row["position"]),
+                author_name=str(row["authorName"]) if row["authorName"] else None,
+                date_added=str(row["dateAdded"]),
+                date_modified=str(row["dateModified"]),
+                tags=self._item_tags(int(row["annotationID"])),
+            )
+            for row in rows
+        )
+
+    def child_notes_for_item(
+        self,
+        item_id: int,
+        *,
+        attachment_id: int | None = None,
+    ) -> tuple[ZoteroNote, ...]:
+        """Return child notes attached to a bibliographic item or its attachment."""
+
+        parent_ids = (item_id,) if attachment_id is None else (item_id, attachment_id)
+        placeholders = ", ".join("?" for _ in parent_ids)
+        try:
+            rows = self.connection.execute(
+                f"""
+                SELECT
+                    notes.itemID AS noteID,
+                    items.key AS noteKey,
+                    notes.parentItemID,
+                    notes.title,
+                    notes.note,
+                    items.dateAdded,
+                    items.dateModified
+                FROM itemNotes AS notes
+                JOIN items ON items.itemID = notes.itemID
+                WHERE notes.parentItemID IN ({placeholders})
+                ORDER BY items.dateAdded, notes.itemID
+                """,
+                parent_ids,
+            ).fetchall()
+        except sqlite3.Error as exc:
+            raise _database_error("Could not read child notes", exc) from exc
+        return tuple(
+            ZoteroNote(
+                note_id=int(row["noteID"]),
+                note_key=str(row["noteKey"]),
+                parent_item_id=int(row["parentItemID"]),
+                title=str(row["title"]) if row["title"] else None,
+                content=str(row["note"] or ""),
+                date_added=str(row["dateAdded"]),
+                date_modified=str(row["dateModified"]),
+                tags=self._item_tags(int(row["noteID"])),
+            )
+            for row in rows
+        )
 
     def _item_metadata(self, item_id: int) -> dict[str, str]:
         try:

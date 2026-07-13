@@ -35,6 +35,36 @@ def test_multi_collection_export(tmp_path: object, zotero_fixture: object) -> No
     assert (output / "Claude" / "manifest.json").is_file()
 
 
+def test_export_cli_supports_annotations_and_filename_template(
+    tmp_path: object, zotero_fixture: object
+) -> None:
+    fixture = zotero_fixture
+    output = tmp_path / "out"  # type: ignore[operator]
+    result = runner.invoke(
+        app,
+        [
+            "export",
+            "My-AI",
+            "--database",
+            str(fixture.database),  # type: ignore[attr-defined]
+            "--output",
+            str(output),
+            "--annotations",
+            "--filename-template",
+            "year_author_title",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "2 annotation files" in result.output
+    assert (
+        output
+        / "My-AI"
+        / "Annotations"
+        / "Books"
+        / "2021 - Chollet - Deep Learning with Python.md"
+    ).is_file()
+
+
 def test_status_reports_without_writing(tmp_path: object, zotero_fixture: object) -> None:
     fixture = zotero_fixture
     output = tmp_path / "out"  # type: ignore[operator]

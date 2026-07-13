@@ -11,8 +11,21 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .annotations import (
+    AnnotationDocument,
+    AnnotationError,
+    render_annotation_document,
+    validate_annotation_documents,
+    write_annotation_documents,
+)
 from .collections import collection_paths, find_node
-from .filenames import attachment_filename, choose_available_name, sanitize_component
+from .filenames import (
+    DEFAULT_FILENAME_TEMPLATE,
+    attachment_filename,
+    choose_available_name,
+    sanitize_component,
+    validate_filename_template,
+)
 from .manifest import Manifest, ManifestEntry, load_manifest, write_manifest
 from .metadata import (
     MetadataEntry,
@@ -48,6 +61,8 @@ class CollectionExporter:
         prune: bool = False,
         verify_hashes: bool = False,
         export_metadata: bool = True,
+        export_annotations: bool = False,
+        filename_template: str = DEFAULT_FILENAME_TEMPLATE,
     ) -> None:
         self.database = database
         self.output_root = output_root.expanduser().resolve()
@@ -58,6 +73,8 @@ class CollectionExporter:
         self.prune = prune
         self.verify_hashes = verify_hashes
         self.export_metadata = export_metadata
+        self.export_annotations = export_annotations
+        self.filename_template = validate_filename_template(filename_template)
         self._digest_cache: dict[tuple[Path, int, int], str] = {}
         if is_within(self.output_root, database.data_dir):
             raise ExportError(
@@ -98,6 +115,12 @@ class CollectionExporter:
                 f"Destination manifest belongs to collection {existing_manifest.collection_key}, "
                 f"not {root.collection.key}: {workspace}"
             )
+        if existing_manifest and existing_manifest.filename_template != self.filename_template:
+            raise ExportError(
+                f"Workspace uses filename template {existing_manifest.filename_template!r}, "
+                f"not {self.filename_template!r}: {workspace}. Export to a new output "
+                "directory to reorganize existing filenames safely."
+            )
         if self.export_metadata and not self.dry_run:
             try:
                 validate_metadata_targets(workspace)
@@ -118,6 +141,16 @@ class CollectionExporter:
             current_identities,
         )
         assignments = self._assign_destinations(workspace, gathered, previous)
+        annotation_documents = (
+            self._annotation_documents(workspace, gathered, assignments)
+            if self.export_annotations
+            else []
+        )
+        if self.export_annotations and not self.dry_run:
+            try:
+                validate_annotation_documents(workspace, annotation_documents)
+            except AnnotationError as exc:
+                raise ExportError(str(exc)) from exc
 
         entries: list[ManifestEntry] = []
         metadata_entries: list[MetadataEntry] = []
@@ -292,6 +325,7 @@ class CollectionExporter:
             manifest = Manifest.create(
                 collection_key=root.collection.key,
                 collection_name=root.collection.name,
+                filename_template=self.filename_template,
                 items=entries,
             )
             write_manifest(manifest_path, manifest)
@@ -308,6 +342,11 @@ class CollectionExporter:
                     write_metadata_files(workspace, manifest, metadata_entries)
                 except MetadataError as exc:
                     raise ExportError(str(exc)) from exc
+            if self.export_annotations:
+                try:
+                    write_annotation_documents(workspace, annotation_documents)
+                except AnnotationError as exc:
+                    raise ExportError(str(exc)) from exc
 
         return ExportStats(
             collection_name=root.collection.name,
@@ -321,6 +360,11 @@ class CollectionExporter:
             pruned=pruned,
             protected=protected,
             reconciled=len(reconciled),
+            annotation_files=len(annotation_documents),
+            annotations=sum(
+                document.annotation_count for document in annotation_documents
+            ),
+            notes=sum(document.note_count for document in annotation_documents),
             changes=tuple(changes),
         )
 
@@ -407,6 +451,44 @@ class CollectionExporter:
                 reconciled.add(identity)
                 break
         return consumed, reconciled
+
+    def _annotation_documents(
+        self,
+        workspace: Path,
+        gathered: list[GatheredAttachment],
+        assignments: dict[Identity, Path],
+    ) -> list[AnnotationDocument]:
+        documents: list[AnnotationDocument] = []
+        reserved: dict[Path, set[str]] = defaultdict(set)
+        for collection, _, attachment in gathered:
+            identity = (collection.key, attachment.attachment_key)
+            pdf_relative = assignments[identity].relative_to(workspace)
+            annotation_directory = Path("Annotations") / pdf_relative.parent
+            desired = f"{pdf_relative.stem}.md"
+            name = choose_available_name(
+                desired,
+                reserved[annotation_directory],
+                key=attachment.attachment_key,
+            )
+            annotation_relative = annotation_directory / name
+            annotations = self.database.annotations_for_attachment(
+                attachment.attachment_id
+            )
+            notes = self.database.child_notes_for_item(
+                attachment.item_id,
+                attachment_id=attachment.attachment_id,
+            )
+            documents.append(
+                render_annotation_document(
+                    collection,
+                    attachment,
+                    annotations,
+                    notes,
+                    pdf_relative_path=pdf_relative,
+                    annotation_relative_path=annotation_relative,
+                )
+            )
+        return documents
 
     def _source_digest(
         self,
@@ -517,7 +599,7 @@ class CollectionExporter:
             if not is_within(directory, workspace):
                 raise ExportError(f"Collection directory resolves outside the workspace: {directory}")
             name = choose_available_name(
-                attachment_filename(attachment),
+                attachment_filename(attachment, self.filename_template),
                 reserved[directory],
                 key=attachment.attachment_key,
             )
