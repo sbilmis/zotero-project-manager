@@ -20,6 +20,7 @@ test("plugin export arguments preserve values without shell interpolation", () =
       "A;NOT-A-COMMAND",
       "/Users/Test/Research Projects",
       true,
+      "bundle",
     ),
     [
       "plugin-export",
@@ -27,6 +28,8 @@ test("plugin export arguments preserve values without shell interpolation", () =
       "A;NOT-A-COMMAND",
       "--output",
       "/Users/Test/Research Projects",
+      "--annotation-layout",
+      "bundle",
       "--annotations",
     ],
   );

@@ -1,0 +1,94 @@
+#zpm-preferences-pane {
+    max-width: 760px;
+}
+
+#zpm-preferences-pane groupbox {
+    margin-bottom: 18px;
+}
+
+#zpm-preferences-pane h2 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.zpm-preferences-intro,
+.zpm-preferences-help,
+.zpm-preferences-layout-description,
+.zpm-preferences-safety-copy,
+.zpm-preferences-warning {
+    line-height: 1.45;
+}
+
+.zpm-preferences-intro {
+    margin: 4px 0 16px;
+    color: var(--fill-secondary, #5b5b66);
+}
+
+.zpm-preferences-field-grid,
+.zpm-preferences-layout-grid {
+    display: grid;
+    gap: 7px;
+}
+
+.zpm-preferences-field-grid > label,
+.zpm-preferences-layout-grid > label {
+    margin-top: 8px;
+    font-weight: 600;
+}
+
+.zpm-preferences-path-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.zpm-preferences-path-row input {
+    min-width: 0;
+    flex: 1;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.zpm-preferences-path-row button,
+#zpm-preferences-layout-select {
+    min-height: 30px;
+}
+
+.zpm-preferences-help {
+    color: var(--fill-secondary, #666);
+    font-size: 0.92em;
+}
+
+.zpm-preferences-status {
+    min-height: 1.4em;
+    margin: 12px 0 0;
+    font-weight: 600;
+}
+
+.zpm-preferences-status[data-kind="success"] {
+    color: #287a3e;
+}
+
+.zpm-preferences-status[data-kind="error"] {
+    color: #b3261e;
+}
+
+#zpm-preferences-layout-select {
+    max-width: 520px;
+}
+
+.zpm-preferences-layout-description {
+    min-height: 2.8em;
+    margin: 2px 0 0;
+    color: var(--fill-secondary, #555);
+}
+
+.zpm-preferences-warning {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    border-inline-start: 3px solid #d99a00;
+    background: rgba(242, 180, 0, 0.12);
+}
+
+.zpm-preferences-safety-copy {
+    margin: 5px 0 0;
+}

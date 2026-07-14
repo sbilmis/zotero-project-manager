@@ -12,9 +12,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .annotations import (
+    DEFAULT_ANNOTATION_LAYOUT,
     AnnotationDocument,
     AnnotationError,
     render_annotation_document,
+    validate_annotation_layout,
     validate_annotation_documents,
     write_annotation_documents,
 )
@@ -22,6 +24,7 @@ from .collections import collection_paths, find_node
 from .filenames import (
     DEFAULT_FILENAME_TEMPLATE,
     attachment_filename,
+    choose_available_component,
     choose_available_name,
     sanitize_component,
     validate_filename_template,
@@ -62,6 +65,7 @@ class CollectionExporter:
         verify_hashes: bool = False,
         export_metadata: bool = True,
         export_annotations: bool = False,
+        annotation_layout: str = DEFAULT_ANNOTATION_LAYOUT,
         filename_template: str = DEFAULT_FILENAME_TEMPLATE,
     ) -> None:
         self.database = database
@@ -74,6 +78,7 @@ class CollectionExporter:
         self.verify_hashes = verify_hashes
         self.export_metadata = export_metadata
         self.export_annotations = export_annotations
+        self.annotation_layout = validate_annotation_layout(annotation_layout)
         self.filename_template = validate_filename_template(filename_template)
         self._digest_cache: dict[tuple[Path, int, int], str] = {}
         if is_within(self.output_root, database.data_dir):
@@ -120,6 +125,12 @@ class CollectionExporter:
                 f"Workspace uses filename template {existing_manifest.filename_template!r}, "
                 f"not {self.filename_template!r}: {workspace}. Export to a new output "
                 "directory to reorganize existing filenames safely."
+            )
+        if existing_manifest and existing_manifest.annotation_layout != self.annotation_layout:
+            raise ExportError(
+                f"Workspace uses annotation layout {existing_manifest.annotation_layout!r}, "
+                f"not {self.annotation_layout!r}: {workspace}. Export to a new output "
+                "directory to reorganize the workspace safely."
             )
         if self.export_metadata and not self.dry_run:
             try:
@@ -326,6 +337,7 @@ class CollectionExporter:
                 collection_key=root.collection.key,
                 collection_name=root.collection.name,
                 filename_template=self.filename_template,
+                annotation_layout=self.annotation_layout,
                 items=entries,
             )
             write_manifest(manifest_path, manifest)
@@ -463,8 +475,15 @@ class CollectionExporter:
         for collection, _, attachment in gathered:
             identity = (collection.key, attachment.attachment_key)
             pdf_relative = assignments[identity].relative_to(workspace)
-            annotation_directory = Path("Annotations") / pdf_relative.parent
-            desired = f"{pdf_relative.stem}.md"
+            if self.annotation_layout == "separate":
+                annotation_directory = Path("Annotations") / pdf_relative.parent
+                desired = f"{pdf_relative.stem}.md"
+            elif self.annotation_layout == "sidecar":
+                annotation_directory = pdf_relative.parent
+                desired = f"{pdf_relative.stem}.annotations.md"
+            else:
+                annotation_directory = pdf_relative.parent
+                desired = "annotations.md"
             name = choose_available_name(
                 desired,
                 reserved[annotation_directory],
@@ -574,6 +593,7 @@ class CollectionExporter:
     ) -> dict[Identity, Path]:
         assignments: dict[Identity, Path] = {}
         reserved: dict[Path, set[str]] = defaultdict(set)
+        reserved_bundles: dict[Path, set[str]] = defaultdict(set)
 
         for collection, relative_dir, attachment in gathered:
             identity = (collection.key, attachment.attachment_key)
@@ -581,15 +601,30 @@ class CollectionExporter:
             if prior is None:
                 continue
             destination = self._safe_manifest_destination(workspace, prior.destination_path)
-            if destination is None or destination.parent != (workspace / relative_dir).resolve():
+            collection_directory = (workspace / relative_dir).resolve()
+            valid_parent = (
+                destination is not None
+                and (
+                    destination.parent == collection_directory
+                    if self.annotation_layout != "bundle"
+                    else destination.parent.parent == collection_directory
+                )
+            )
+            if destination is None or not valid_parent:
                 continue
             assignments[identity] = destination
             reserved[destination.parent].add(destination.name.casefold())
+            if self.annotation_layout == "bundle":
+                reserved_bundles[collection_directory].add(
+                    destination.parent.name.casefold()
+                )
 
         if workspace.exists() and not self.overwrite:
             for path in workspace.rglob("*"):
                 if path.is_file() and path.name not in {"manifest.json", "README.md"}:
                     reserved[path.parent.resolve()].add(path.name.casefold())
+                if self.annotation_layout == "bundle" and path.is_dir():
+                    reserved_bundles[path.parent.resolve()].add(path.name.casefold())
 
         for collection, relative_dir, attachment in gathered:
             identity = (collection.key, attachment.attachment_key)
@@ -598,12 +633,24 @@ class CollectionExporter:
             directory = (workspace / relative_dir).resolve()
             if not is_within(directory, workspace):
                 raise ExportError(f"Collection directory resolves outside the workspace: {directory}")
-            name = choose_available_name(
-                attachment_filename(attachment, self.filename_template),
-                reserved[directory],
-                key=attachment.attachment_key,
-            )
-            assignments[identity] = directory / name
+            desired_name = attachment_filename(attachment, self.filename_template)
+            if self.annotation_layout == "bundle":
+                desired_path = Path(desired_name)
+                bundle_name = choose_available_component(
+                    desired_path.stem,
+                    reserved_bundles[directory],
+                    key=attachment.attachment_key,
+                )
+                assignments[identity] = (
+                    directory / bundle_name / f"{bundle_name}{desired_path.suffix}"
+                )
+            else:
+                name = choose_available_name(
+                    desired_name,
+                    reserved[directory],
+                    key=attachment.attachment_key,
+                )
+                assignments[identity] = directory / name
         return assignments
 
     @staticmethod

@@ -10,6 +10,7 @@ from typing import Annotated
 import typer
 
 from . import __version__
+from .annotations import ANNOTATION_LAYOUTS, validate_annotation_layout
 from .bridge import BridgeError, BridgeSource
 from .collections import (
     CollectionError,
@@ -96,6 +97,13 @@ def _linked_dir(explicit: Path | None, config: AppConfig) -> Path | None:
 def _filename_template(explicit: str | None, config: AppConfig) -> str:
     try:
         return validate_filename_template(explicit or config.filename_template)
+    except ValueError as exc:
+        raise ConfigError(str(exc)) from exc
+
+
+def _annotation_layout(explicit: str | None, config: AppConfig) -> str:
+    try:
+        return validate_annotation_layout(explicit or config.annotation_layout)
     except ValueError as exc:
         raise ConfigError(str(exc)) from exc
 
@@ -210,6 +218,13 @@ def export(
             help="Export PDF annotations and child notes as generated Markdown.",
         ),
     ] = False,
+    annotation_layout: Annotated[
+        str | None,
+        typer.Option(
+            "--annotation-layout",
+            help="Annotation placement: " + ", ".join(ANNOTATION_LAYOUTS) + ".",
+        ),
+    ] = None,
     filename_template: Annotated[
         str | None,
         typer.Option(
@@ -275,6 +290,7 @@ def export(
                 verify_hashes=verify,
                 export_metadata=metadata,
                 export_annotations=annotations,
+                annotation_layout=_annotation_layout(annotation_layout, config),
                 filename_template=_filename_template(filename_template, config),
             )
             stats = exporter.export_many(selected, forest)
@@ -307,6 +323,10 @@ def plugin_export(
         bool,
         typer.Option("--annotations/--no-annotations", help="Export annotations and child notes."),
     ] = False,
+    annotation_layout: Annotated[
+        str | None,
+        typer.Option("--annotation-layout", help="Annotation placement preset."),
+    ] = None,
     metadata: Annotated[
         bool,
         typer.Option("--metadata/--no-metadata", help="Generate metadata and index files."),
@@ -335,6 +355,7 @@ def plugin_export(
             include_non_pdf=not pdf_only,
             export_metadata=metadata,
             export_annotations=annotations,
+            annotation_layout=_annotation_layout(annotation_layout, config),
             filename_template=_filename_template(filename_template, config),
         ).export_many([selected], forest)
     except (BridgeError, CollectionError, ConfigError, ExportError, OSError) as exc:
@@ -375,6 +396,10 @@ def status(
         bool,
         typer.Option("--annotations/--no-annotations", help="Include annotation planning."),
     ] = False,
+    annotation_layout: Annotated[
+        str | None,
+        typer.Option("--annotation-layout", help="Annotation placement preset."),
+    ] = None,
     filename_template: Annotated[
         str | None,
         typer.Option("--filename-template", help="Metadata filename ordering preset."),
@@ -425,6 +450,7 @@ def status(
                 prune=prune,
                 verify_hashes=verify,
                 export_annotations=annotations,
+                annotation_layout=_annotation_layout(annotation_layout, config),
                 filename_template=_filename_template(filename_template, config),
             ).export_many(selected, forest)
     except (ZoteroDatabaseError, CollectionError, ConfigError, ExportError, OSError) as exc:
@@ -515,6 +541,10 @@ def add_project(
             help="Export PDF annotations and child notes during sync.",
         ),
     ] = False,
+    annotation_layout: Annotated[
+        str | None,
+        typer.Option("--annotation-layout", help="Annotation placement preset."),
+    ] = None,
     filename_template: Annotated[
         str | None,
         typer.Option("--filename-template", help="Metadata filename ordering preset."),
@@ -540,6 +570,7 @@ def add_project(
             verify=verify,
             metadata=metadata,
             annotations=annotations,
+            annotation_layout=_annotation_layout(annotation_layout, config),
             filename_template=_filename_template(filename_template, config),
         )
         updated = config.with_project(project)
@@ -564,6 +595,10 @@ def set_config(
         Path | None,
         typer.Option("--linked-attachment-base-dir", help="Default linked attachment base."),
     ] = None,
+    annotation_layout: Annotated[
+        str | None,
+        typer.Option("--annotation-layout", help="Default annotation placement preset."),
+    ] = None,
     filename_template: Annotated[
         str | None,
         typer.Option("--filename-template", help="Default metadata filename ordering preset."),
@@ -576,6 +611,7 @@ def set_config(
         zotero_dir is None
         and output is None
         and linked_attachment_base_dir is None
+        and annotation_layout is None
         and filename_template is None
     ):
         typer.echo("Error: Provide at least one setting to update", err=True)
@@ -596,6 +632,7 @@ def set_config(
                 if linked_attachment_base_dir is not None
                 else config.linked_attachment_base_dir
             ),
+            annotation_layout=_annotation_layout(annotation_layout, config),
             filename_template=_filename_template(filename_template, config),
         )
         save_config(updated)
@@ -619,6 +656,7 @@ def show_config(ctx: typer.Context) -> None:
         f"{config.linked_attachment_base_dir or '(not configured)'}"
     )
     typer.echo(f"Filename template: {config.filename_template}")
+    typer.echo(f"Annotation layout: {config.annotation_layout}")
     typer.echo(f"Named projects: {len(config.projects)}")
 
 
@@ -657,6 +695,7 @@ def show_project(
     typer.echo(f"Verify: {project.verify}")
     typer.echo(f"Metadata: {project.metadata}")
     typer.echo(f"Annotations: {project.annotations}")
+    typer.echo(f"Annotation layout: {project.annotation_layout}")
     typer.echo(f"Filename template: {project.filename_template}")
 
 
@@ -699,6 +738,7 @@ def sync(
                 verify_hashes=project.verify,
                 export_metadata=project.metadata,
                 export_annotations=project.annotations,
+                annotation_layout=project.annotation_layout,
                 filename_template=project.filename_template,
             ).export_many(selected, forest)
     except (ZoteroDatabaseError, CollectionError, ExportError, OSError) as exc:

@@ -15,3 +15,6 @@ zpm-menu-choose-executable =
 
 zpm-menu-check-installation =
     .label = Check zpm Installation
+
+zpm-menu-settings =
+    .label = Settings…

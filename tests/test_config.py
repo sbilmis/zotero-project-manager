@@ -20,6 +20,7 @@ def test_config_round_trip_with_named_project(tmp_path: Path) -> None:
         prune=True,
         verify=True,
         annotations=True,
+        annotation_layout="bundle",
         filename_template="year_author_title",
     )
     expected = AppConfig(
@@ -27,6 +28,7 @@ def test_config_round_trip_with_named_project(tmp_path: Path) -> None:
         zotero_dir=tmp_path / "Zotero",
         output_dir=tmp_path / "exports",
         linked_attachment_base_dir=tmp_path / "linked",
+        annotation_layout="sidecar",
         filename_template="title_author_year",
         projects={"ai": project},
     )
@@ -34,6 +36,8 @@ def test_config_round_trip_with_named_project(tmp_path: Path) -> None:
     assert load_config(path) == expected
     assert load_config(path).projects["ai"].metadata is True
     assert load_config(path).projects["ai"].annotations is True
+    assert load_config(path).projects["ai"].annotation_layout == "bundle"
+    assert load_config(path).annotation_layout == "sidecar"
     assert load_config(path).projects["ai"].filename_template == "year_author_title"
 
 
@@ -57,6 +61,11 @@ def test_invalid_project_name_is_rejected() -> None:
 def test_invalid_filename_template_is_rejected() -> None:
     with pytest.raises(ValueError, match="Unknown filename template"):
         make_project("ai", ["My-AI"], filename_template="random")
+
+
+def test_invalid_annotation_layout_is_rejected() -> None:
+    with pytest.raises(ValueError, match="Unknown annotation layout"):
+        make_project("ai", ["My-AI"], annotation_layout="random")
 
 
 def test_missing_config_returns_empty_defaults(tmp_path: Path) -> None:

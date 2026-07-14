@@ -1,0 +1,60 @@
+<vbox id="zpm-preferences-pane"
+      xmlns:html="http://www.w3.org/1999/xhtml"
+      onload="ZPMPreferences.init()">
+    <groupbox id="zpm-preferences-locations">
+        <label><html:h2>Export locations</html:h2></label>
+        <html:p class="zpm-preferences-intro">
+            Choose where project workspaces are created and which zpm executable Zotero runs.
+        </html:p>
+
+        <html:div class="zpm-preferences-field-grid">
+            <html:label for="zpm-preferences-output">Default export folder</html:label>
+            <html:div class="zpm-preferences-path-row">
+                <html:input id="zpm-preferences-output" type="text" spellcheck="false"/>
+                <html:button id="zpm-preferences-output-button" type="button">Choose…</html:button>
+            </html:div>
+            <html:span class="zpm-preferences-help">
+                Each Zotero collection becomes a project workspace inside this folder.
+            </html:span>
+
+            <html:label for="zpm-preferences-executable">zpm executable</html:label>
+            <html:div class="zpm-preferences-path-row">
+                <html:input id="zpm-preferences-executable" type="text" spellcheck="false"/>
+                <html:button id="zpm-preferences-executable-button" type="button">Choose…</html:button>
+                <html:button id="zpm-preferences-test-button" type="button">Test</html:button>
+            </html:div>
+            <html:span class="zpm-preferences-help">
+                Homebrew installs are detected automatically; set this only for a custom installation.
+            </html:span>
+        </html:div>
+        <html:p id="zpm-preferences-status" class="zpm-preferences-status" role="status"></html:p>
+    </groupbox>
+
+    <groupbox id="zpm-preferences-layout">
+        <label><html:h2>Annotation layout</html:h2></label>
+        <html:p class="zpm-preferences-intro">
+            Select how generated Markdown and cached annotation images are arranged around PDFs.
+        </html:p>
+        <html:div class="zpm-preferences-layout-grid">
+            <html:label for="zpm-preferences-layout-select">Workspace arrangement</html:label>
+            <html:select id="zpm-preferences-layout-select">
+                <html:option value="separate">Separate — generated files under Annotations/</html:option>
+                <html:option value="sidecar">Sidecar — annotations beside each PDF</html:option>
+                <html:option value="bundle">Bundle — one folder per paper</html:option>
+            </html:select>
+            <html:p id="zpm-preferences-layout-description" class="zpm-preferences-layout-description"></html:p>
+        </html:div>
+        <html:p class="zpm-preferences-warning">
+            Existing workspaces keep the layout recorded in their manifest. Export to a new parent
+            folder when changing layouts.
+        </html:p>
+    </groupbox>
+
+    <groupbox id="zpm-preferences-safety">
+        <label><html:h2>Read-only guarantee</html:h2></label>
+        <html:p class="zpm-preferences-safety-copy">
+            zpm reads Zotero metadata, PDFs, notes, and cached annotation images. It never writes to
+            zotero.sqlite or modifies files inside the Zotero data directory.
+        </html:p>
+    </groupbox>
+</vbox>
