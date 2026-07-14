@@ -11,6 +11,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
+from .annotations import DEFAULT_ANNOTATION_LAYOUT, validate_annotation_layout
 from .filenames import DEFAULT_FILENAME_TEMPLATE, validate_filename_template
 
 _PROJECT_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
@@ -33,6 +34,7 @@ class ProjectConfig:
     verify: bool = False
     metadata: bool = True
     annotations: bool = False
+    annotation_layout: str = DEFAULT_ANNOTATION_LAYOUT
     filename_template: str = DEFAULT_FILENAME_TEMPLATE
 
 
@@ -44,6 +46,7 @@ class AppConfig:
     zotero_dir: Path | None = None
     output_dir: Path | None = None
     linked_attachment_base_dir: Path | None = None
+    annotation_layout: str = DEFAULT_ANNOTATION_LAYOUT
     filename_template: str = DEFAULT_FILENAME_TEMPLATE
     projects: dict[str, ProjectConfig] = field(default_factory=dict)
 
@@ -101,6 +104,10 @@ def load_config(path: Path | None = None) -> AppConfig:
             verify=_boolean(values, "verify", False, name),
             metadata=_boolean(values, "metadata", True, name),
             annotations=_boolean(values, "annotations", False, name),
+            annotation_layout=_annotation_layout(
+                values.get("annotation_layout", payload.get("annotation_layout")),
+                context=f"Project {name!r}",
+            ),
             filename_template=_filename_template(
                 values.get("filename_template", payload.get("filename_template")),
                 context=f"Project {name!r}",
@@ -112,6 +119,9 @@ def load_config(path: Path | None = None) -> AppConfig:
         output_dir=_optional_path(payload.get("output_dir"), config_path),
         linked_attachment_base_dir=_optional_path(
             payload.get("linked_attachment_base_dir"), config_path
+        ),
+        annotation_layout=_annotation_layout(
+            payload.get("annotation_layout"), context="Global configuration"
         ),
         filename_template=_filename_template(
             payload.get("filename_template"), context="Global configuration"
@@ -132,6 +142,7 @@ def save_config(config: AppConfig) -> None:
         if value is not None:
             lines.append(f"{key} = {_quote(str(value))}")
     lines.append(f"filename_template = {_quote(config.filename_template)}")
+    lines.append(f"annotation_layout = {_quote(config.annotation_layout)}")
     for name in sorted(config.projects, key=str.casefold):
         project = config.projects[name]
         lines.extend(
@@ -151,6 +162,7 @@ def save_config(config: AppConfig) -> None:
                 f"verify = {str(project.verify).lower()}",
                 f"metadata = {str(project.metadata).lower()}",
                 f"annotations = {str(project.annotations).lower()}",
+                f"annotation_layout = {_quote(project.annotation_layout)}",
                 f"filename_template = {_quote(project.filename_template)}",
             ]
         )
@@ -180,6 +192,7 @@ def make_project(
     verify: bool = False,
     metadata: bool = True,
     annotations: bool = False,
+    annotation_layout: str = DEFAULT_ANNOTATION_LAYOUT,
     filename_template: str = DEFAULT_FILENAME_TEMPLATE,
 ) -> ProjectConfig:
     """Validate and construct a named project."""
@@ -189,6 +202,7 @@ def make_project(
         raise ConfigError("A named project requires at least one collection")
     try:
         validated_template = validate_filename_template(filename_template)
+        validated_layout = validate_annotation_layout(annotation_layout)
     except ValueError as exc:
         raise ConfigError(str(exc)) from exc
     return ProjectConfig(
@@ -201,6 +215,7 @@ def make_project(
         verify=verify,
         metadata=metadata,
         annotations=annotations,
+        annotation_layout=validated_layout,
         filename_template=validated_template,
     )
 
@@ -238,6 +253,17 @@ def _filename_template(value: Any, *, context: str) -> str:
         raise ConfigError(f"{context} filename_template must be a non-empty string")
     try:
         return validate_filename_template(value)
+    except ValueError as exc:
+        raise ConfigError(f"{context}: {exc}") from exc
+
+
+def _annotation_layout(value: Any, *, context: str) -> str:
+    if value is None:
+        return DEFAULT_ANNOTATION_LAYOUT
+    if not isinstance(value, str) or not value:
+        raise ConfigError(f"{context} annotation_layout must be a non-empty string")
+    try:
+        return validate_annotation_layout(value)
     except ValueError as exc:
         raise ConfigError(f"{context}: {exc}") from exc
 

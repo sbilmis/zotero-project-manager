@@ -4,6 +4,7 @@ import pytest
 
 from zotero_project_manager.filenames import (
     attachment_filename,
+    choose_available_component,
     choose_available_name,
     sanitize_component,
     validate_filename_template,
@@ -77,3 +78,12 @@ def test_duplicate_names_prefer_stable_attachment_key() -> None:
     reserved: set[str] = set()
     assert choose_available_name("Paper.pdf", reserved, key="AAA") == "Paper.pdf"
     assert choose_available_name("Paper.pdf", reserved, key="BBB") == "Paper [BBB].pdf"
+
+
+def test_duplicate_directory_components_keep_dots_in_the_name() -> None:
+    reserved: set[str] = set()
+    assert choose_available_component("Analysis v1.2", reserved, key="AAA") == "Analysis v1.2"
+    assert (
+        choose_available_component("Analysis v1.2", reserved, key="BBB")
+        == "Analysis v1.2 [BBB]"
+    )

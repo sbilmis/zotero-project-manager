@@ -6,9 +6,9 @@ writes into a separate output directory.
 
 The current release supports recursive collection export, multiple collections,
 configurable portable filenames, incremental updates, SHA-256 verification,
-safe pruning, DOI/tag metadata, opt-in annotation and child-note Markdown,
-research indexes, comprehensive diagnostics, an optional Zotero 9 companion
-plugin, and a versioned JSON manifest.
+safe pruning, DOI/tag metadata, opt-in annotation and child-note Markdown with
+three workspace layouts, research indexes, comprehensive diagnostics, an optional
+Zotero 9 companion plugin with a settings pane, and a versioned JSON manifest.
 
 ## Quick start: export `My-AI`
 
@@ -82,19 +82,27 @@ Export with zpm
     Choose Export Folder…
     Choose zpm Executable…
     Check zpm Installation
+    Settings…
 ```
 
-Install `zpm` first, then download `zpm-zotero-0.1.0.xpi` from the
-[v0.8.0 GitHub release](https://github.com/sbilmis/zotero-project-manager/releases/tag/v0.8.0).
+Install `zpm` first, then download `zpm-zotero-0.2.0.xpi` from the
+[v0.9.0 GitHub release](https://github.com/sbilmis/zotero-project-manager/releases/tag/v0.9.0).
 In Zotero, open **Tools → Plugins**, use the gear menu, choose
 **Install Plugin From File…**, and select the downloaded XPI.
 
-The first export asks for an output folder and remembers it. The plugin discovers
-Homebrew installations automatically; **Choose zpm Executable…** supports pipx,
-virtual-environment, and other custom installations. It reads the selected collection with
-Zotero's in-process APIs and gives zpm a temporary, validated JSON snapshot. This
-means plugin exports work while Zotero is open without reading or writing
-`zotero.sqlite`. The temporary snapshot is removed after the command finishes.
+Open **Settings…** from the collection menu, or open Zotero **Settings → Zotero
+Project Manager**, to choose the output folder, test the zpm installation, and select
+the annotation layout. The plugin discovers Homebrew installations automatically;
+**Choose zpm Executable…** supports pipx, virtual-environment, and other custom
+installations. It reads the selected collection with Zotero's in-process APIs and
+gives zpm a temporary, validated JSON snapshot. This means plugin exports work while
+Zotero is open without reading or writing `zotero.sqlite`. The temporary snapshot is
+removed after the command finishes.
+
+The plugin supports Zotero's normal update mechanism. After a new zpm release, open
+**Tools → Plugins**, use the gear menu, and choose **Check for Updates**. Zotero reads
+the versioned release information from the plugin's update feed and installs compatible
+versions; you do not need to remove the existing plugin first.
 
 The plugin is deliberately a thin interface: the Python package remains the only
 implementation of copying, manifests, filenames, metadata, and annotation export.
@@ -184,19 +192,57 @@ material:
 zpm export "My-AI" --annotations
 ```
 
-For each attachment, `zpm` creates a hierarchy-preserving Markdown document under
-`Annotations/`. It includes highlights, underlines, comments, colors, page labels,
-annotation tags, modification dates, image/ink annotations, and child notes. Cached
-image and ink annotation previews are copied as PNG files into a managed `.assets`
-folder beside the Markdown document and embedded with relative Markdown links. If
-Zotero has no cached preview, the Markdown records that fact instead of failing the
-whole export.
+It includes highlights, underlines, comments, colors, page labels, annotation tags,
+modification dates, image/ink annotations, and child notes. Cached image and ink
+annotation previews are copied as PNG files into a managed `.assets` folder beside
+the Markdown document and embedded with relative Markdown links. If Zotero has no
+cached preview, the Markdown records that fact instead of failing the whole export.
 For items in the personal Zotero library, links open the PDF or annotation in Zotero.
 
 Generated annotation files and asset folders carry safety markers. `zpm` refuses to
 replace unmanaged Markdown or manage an existing unmarked asset folder, and avoids
 rewriting unchanged generated files. Zotero, its database, PDFs, and annotation cache
 remain read-only.
+
+### Annotation layouts
+
+Choose the layout that matches how the exported workspace will be used:
+
+- `separate` (default) keeps the PDF hierarchy clean and puts generated material
+  under a parallel `Annotations/` hierarchy.
+- `sidecar` puts `paper.annotations.md` and `paper.annotations.assets/` beside
+  `paper.pdf`; this is convenient for normal file browsing.
+- `bundle` creates one folder per paper containing the PDF, `annotations.md`, and
+  `annotations.assets/`; this is convenient when a paper should move as one unit.
+
+```text
+separate/                         sidecar/
+  Books/paper.pdf                   Books/paper.pdf
+  Annotations/Books/paper.md        Books/paper.annotations.md
+
+bundle/
+  Books/paper/
+    paper.pdf
+    annotations.md
+    annotations.assets/
+```
+
+Select a layout for one export:
+
+```bash
+zpm export "My-AI" --annotations --annotation-layout sidecar
+```
+
+Save a global default or a named-project preference:
+
+```bash
+zpm config set --annotation-layout bundle
+zpm project add ai "My-AI" --annotations --annotation-layout bundle --force
+```
+
+The selected layout is recorded in manifest v4. An existing workspace cannot be
+silently reorganized by changing this setting; choose a new output parent when
+switching layouts.
 
 ## Filename preferences
 
@@ -369,6 +415,7 @@ Useful options:
 --verify                           Fully recompute source and destination hashes
 --metadata / --no-metadata        Enable or disable metadata and index generation
 --annotations / --no-annotations  Export annotations and child notes as Markdown
+--annotation-layout LAYOUT        separate, sidecar, or bundle
 --filename-template PRESET        Select metadata component ordering
 --overwrite                        Adopt an unmanaged destination
 --verbose                          Enable diagnostic messages
@@ -396,8 +443,9 @@ uses recorded source and destination metadata plus SHA-256 digests to:
 adopting an existing directory or replacing an unmanaged filename conflict.
 Use `--verify` for a full content audit even when file metadata appears unchanged.
 
-Manifest v1 workspaces are read automatically. The next successful export adds
-hashes and upgrades the manifest to v2; `status` and `--dry-run` never rewrite it.
+Manifest v1–v3 workspaces are read automatically with compatible defaults. A
+successful export writes the current manifest v4; `status` and `--dry-run` never
+rewrite it.
 
 ## Troubleshooting
 
@@ -447,11 +495,12 @@ src/zotero_project_manager/
 zotero-plugin/
     bootstrap.js    Zotero 9 lifecycle hooks
     zpm.js          context menu, snapshot bridge, and CLI process integration
+    preferences.*   Zotero settings pane for paths and annotation layout
     manifest.json   Zotero compatibility and update metadata
 ```
 
 ## Current non-goals and roadmap
 
 Better BibTeX export, DEVONthink or automatic personal NotebookLM uploads, watch
-mode, a standalone GUI, and symlink mode are not implemented in v0.8.0. They
+mode, a standalone GUI, and symlink mode are not implemented in v0.9.0. They
 remain possible future additions; Zotero continues to be the source of truth.

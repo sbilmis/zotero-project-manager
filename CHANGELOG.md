@@ -2,6 +2,21 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 0.9.0 — 2026-07-14
+
+- Add `separate`, `sidecar`, and `bundle` annotation workspace layouts for direct
+  exports, plugin exports, global configuration, and named projects.
+- Record the layout in manifest v4 and reject unsafe in-place layout changes while
+  retaining compatible defaults for manifest v1–v3 workspaces.
+- Add a Zotero 9 settings pane for the default output folder, custom zpm executable,
+  installation testing, and annotation-layout selection.
+- Add a collection-menu **Settings…** shortcut and preserve automatic Homebrew/PATH
+  executable discovery in both the export flow and settings test.
+- Add Zotero plugin 0.2.0 with a versioned SHA-256 update-feed entry so installed
+  plugin 0.1.0 copies can update through Zotero's plugin manager.
+- Expand Python and JavaScript coverage for layout structures, configuration,
+  manifests, snapshot exports, collisions, and command arguments.
+
 ## 0.8.0 — 2026-07-14
 
 - Add the optional Zotero 9 companion plugin with collection context-menu commands

@@ -65,7 +65,8 @@ def test_v1_manifest_is_migrated_in_memory(tmp_path: Path) -> None:
     )
     manifest = load_manifest(path)
     assert manifest is not None
-    assert manifest.version == 3
+    assert manifest.version == 4
     assert manifest.filename_template == "author_year_title"
+    assert manifest.annotation_layout == "separate"
     assert manifest.items[0].source_sha256 is None
     assert manifest.items[0].state == "active"

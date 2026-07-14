@@ -61,7 +61,7 @@ jobs:
         with:
           python-version: "3.x"
       - name: Check JavaScript and run plugin tests
-        run: node --check zotero-plugin/bootstrap.js && node --check zotero-plugin/zpm.js && node --test zotero-plugin/tests/*.test.cjs
+        run: node --check zotero-plugin/bootstrap.js && node --check zotero-plugin/zpm.js && node --check zotero-plugin/preferences.js && node --test zotero-plugin/tests/*.test.cjs
       - name: Build companion plugin
         run: python scripts/build_zotero_plugin.py
       - name: Verify XPI contents

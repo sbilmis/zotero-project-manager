@@ -10,9 +10,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .annotations import DEFAULT_ANNOTATION_LAYOUT, validate_annotation_layout
 from .filenames import DEFAULT_FILENAME_TEMPLATE, validate_filename_template
 
-MANIFEST_VERSION = 3
+MANIFEST_VERSION = 4
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,6 +42,7 @@ class Manifest:
     collection_key: str
     collection_name: str
     filename_template: str
+    annotation_layout: str
     items: tuple[ManifestEntry, ...]
 
     @classmethod
@@ -51,6 +53,7 @@ class Manifest:
         collection_name: str,
         items: list[ManifestEntry],
         filename_template: str = DEFAULT_FILENAME_TEMPLATE,
+        annotation_layout: str = DEFAULT_ANNOTATION_LAYOUT,
         exported_at: datetime | None = None,
     ) -> "Manifest":
         """Create a current-version manifest with a UTC timestamp."""
@@ -62,6 +65,7 @@ class Manifest:
             collection_key=collection_key,
             collection_name=collection_name,
             filename_template=validate_filename_template(filename_template),
+            annotation_layout=validate_annotation_layout(annotation_layout),
             items=tuple(items),
         )
 
@@ -74,6 +78,7 @@ class Manifest:
             "collection_key": self.collection_key,
             "collection_name": self.collection_name,
             "filename_template": self.filename_template,
+            "annotation_layout": self.annotation_layout,
             "items": [asdict(item) for item in self.items],
         }
 
@@ -86,7 +91,7 @@ def load_manifest(path: Path) -> Manifest | None:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
         version = int(payload.get("version", 0))
-        if version not in {1, 2, MANIFEST_VERSION}:
+        if version not in {1, 2, 3, MANIFEST_VERSION}:
             return None
         items: list[ManifestEntry] = []
         for item in payload["items"]:
@@ -106,6 +111,9 @@ def load_manifest(path: Path) -> Manifest | None:
             collection_name=str(payload["collection_name"]),
             filename_template=validate_filename_template(
                 str(payload.get("filename_template", DEFAULT_FILENAME_TEMPLATE))
+            ),
+            annotation_layout=validate_annotation_layout(
+                str(payload.get("annotation_layout", DEFAULT_ANNOTATION_LAYOUT))
             ),
             items=tuple(items),
         )

@@ -3,6 +3,8 @@
 const ZPM_PLUGIN_ID = "zpm@zotero-project-manager";
 const ZPM_PREF_OUTPUT = "extensions.zpm.outputDir";
 const ZPM_PREF_EXECUTABLE = "extensions.zpm.executablePath";
+const ZPM_PREF_ANNOTATION_LAYOUT = "extensions.zpm.annotationLayout";
+const ZPM_ANNOTATION_LAYOUTS = new Set(["separate", "sidecar", "bundle"]);
 const ZPM_SNAPSHOT_SCHEMA = 1;
 const ZPM_MAX_OUTPUT = 12000;
 
@@ -14,13 +16,21 @@ function zpmTags(item) {
   return item.getTags().map((value) => String(value.tag)).sort((a, b) => a.localeCompare(b));
 }
 
-function zpmCommandArguments(snapshotPath, collectionKey, outputDir, annotations) {
+function zpmCommandArguments(
+  snapshotPath,
+  collectionKey,
+  outputDir,
+  annotations,
+  annotationLayout = "separate",
+) {
   const args = [
     "plugin-export",
     snapshotPath,
     collectionKey,
     "--output",
     outputDir,
+    "--annotation-layout",
+    annotationLayout,
   ];
   if (annotations) {
     args.push("--annotations");
@@ -44,6 +54,15 @@ var ZPMPlugin = {
   async startup({ id, rootURI }) {
     this.id = id;
     this.rootURI = rootURI;
+    await Zotero.PreferencePanes.register({
+      pluginID: this.id,
+      id: "zpm-preferences",
+      label: "Zotero Project Manager",
+      src: "preferences.xhtml",
+      scripts: ["preferences.js"],
+      stylesheets: ["preferences.css"],
+      helpURL: "https://github.com/sbilmis/zotero-project-manager#zotero-9-companion-plugin",
+    });
     for (const window of Zotero.getMainWindows()) {
       this.addToWindow(window);
     }
@@ -96,6 +115,13 @@ var ZPMPlugin = {
                 void plugin.checkInstallation();
               },
             },
+            {
+              menuType: "menuitem",
+              l10nID: "zpm-menu-settings",
+              onCommand() {
+                Zotero.Utilities.Internal.openPreferences("zpm-preferences");
+              },
+            },
           ],
         },
       ],
@@ -133,6 +159,7 @@ var ZPMPlugin = {
         return;
       }
       const executable = await this.findExecutable();
+      const annotationLayout = this.annotationLayout();
       const snapshot = await this.buildSnapshot(row.ref, annotations);
       const snapshotPath = PathUtils.join(
         PathUtils.tempDir,
@@ -142,7 +169,13 @@ var ZPMPlugin = {
       try {
         const result = await this.runProcess(
           executable,
-          zpmCommandArguments(snapshotPath, row.ref.key, outputDir, annotations),
+          zpmCommandArguments(
+            snapshotPath,
+            row.ref.key,
+            outputDir,
+            annotations,
+            annotationLayout,
+          ),
         );
         if (result.exitCode !== 0) {
           throw new Error(result.output || `zpm exited with status ${result.exitCode}`);
@@ -169,6 +202,11 @@ var ZPMPlugin = {
       Zotero.logError(error);
       this.alert("zpm was not found", error.message || String(error));
     }
+  },
+
+  annotationLayout() {
+    const value = String(Zotero.Prefs.get(ZPM_PREF_ANNOTATION_LAYOUT) || "separate");
+    return ZPM_ANNOTATION_LAYOUTS.has(value) ? value : "separate";
   },
 
   async chooseOutputDirectory(forcePicker) {
@@ -408,5 +446,6 @@ if (typeof module !== "undefined") {
     zpmCommandArguments,
     zpmCreatorName,
     zpmTrimOutput,
+    ZPM_ANNOTATION_LAYOUTS,
   };
 }

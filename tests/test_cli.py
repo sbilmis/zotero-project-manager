@@ -50,6 +50,8 @@ def test_export_cli_supports_annotations_and_filename_template(
             "--output",
             str(output),
             "--annotations",
+            "--annotation-layout",
+            "sidecar",
             "--filename-template",
             "year_author_title",
         ],
@@ -59,9 +61,8 @@ def test_export_cli_supports_annotations_and_filename_template(
     assert (
         output
         / "My-AI"
-        / "Annotations"
         / "Books"
-        / "2021 - Chollet - Deep Learning with Python.md"
+        / "2021 - Chollet - Deep Learning with Python.annotations.md"
     ).is_file()
 
 
@@ -116,12 +117,15 @@ def test_config_set_and_show(tmp_path: object, zotero_fixture: object) -> None:
             str(fixture.data_dir),  # type: ignore[attr-defined]
             "--output",
             str(output),
+            "--annotation-layout",
+            "bundle",
         ],
     )
     assert result.exit_code == 0, result.output
     shown = runner.invoke(app, ["--config", str(path), "config", "show"])
     assert shown.exit_code == 0, shown.output
     assert str(output) in shown.output
+    assert "Annotation layout: bundle" in shown.output
     assert "Named projects: 0" in shown.output
 
 

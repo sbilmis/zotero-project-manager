@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import zipfile
 from pathlib import Path
@@ -15,9 +16,33 @@ FILES = (
     "bootstrap.js",
     "manifest.json",
     "prefs.js",
+    "preferences.xhtml",
+    "preferences.js",
+    "preferences.css",
     "zpm.js",
     "locale/en-US/zpm.ftl",
 )
+
+
+def verify_update_feed(target: Path, version: str) -> None:
+    """Verify that the update feed contains the exact XPI built for this version."""
+
+    payload = json.loads((PLUGIN / "updates.json").read_text(encoding="utf-8"))
+    updates = payload["addons"]["zpm@zotero-project-manager"]["updates"]
+    update = next((item for item in updates if item.get("version") == version), None)
+    if update is None:
+        raise RuntimeError(f"updates.json has no entry for plugin version {version}")
+    digest = hashlib.sha256(target.read_bytes()).hexdigest()
+    expected_hash = f"sha256:{digest}"
+    if update.get("update_hash") != expected_hash:
+        raise RuntimeError(
+            "updates.json hash does not match the built XPI: "
+            f"expected {expected_hash}"
+        )
+    if not str(update.get("update_link", "")).endswith(f"/{target.name}"):
+        raise RuntimeError(
+            f"updates.json link does not reference the built XPI name: {target.name}"
+        )
 
 
 def build() -> Path:
@@ -34,6 +59,7 @@ def build() -> Path:
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o644 << 16
             archive.writestr(info, source.read_bytes())
+    verify_update_feed(target, version)
     return target
 
 

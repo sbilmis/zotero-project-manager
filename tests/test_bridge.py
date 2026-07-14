@@ -112,24 +112,25 @@ def test_plugin_export_uses_snapshot_without_opening_sqlite(
             "--output",
             str(output),
             "--annotations",
+            "--annotation-layout",
+            "bundle",
         ],
     )
     assert result.exit_code == 0, result.output
     assert "Zotero 9.0.6 companion snapshot exported" in result.output
-    assert (output / "My-AI" / "Books" / "Chollet - 2021 - Deep Learning with Python.pdf").is_file()
-    assert (
+    bundle = (
         output
         / "My-AI"
-        / "Annotations"
         / "Books"
-        / "Chollet - 2021 - Deep Learning with Python.md"
+        / "Chollet - 2021 - Deep Learning with Python"
+    )
+    assert (bundle / "Chollet - 2021 - Deep Learning with Python.pdf").is_file()
+    assert (
+        bundle / "annotations.md"
     ).is_file()
     assert (
-        output
-        / "My-AI"
-        / "Annotations"
-        / "Books"
-        / "Chollet - 2021 - Deep Learning with Python.assets"
+        bundle
+        / "annotations.assets"
         / "ANNOT001.png"
     ).read_bytes() == b"cached-image"
 

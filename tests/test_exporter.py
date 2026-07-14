@@ -129,6 +129,66 @@ def test_unchanged_annotation_markdown_is_not_rewritten(
     assert annotation_path.stat().st_mtime_ns == fixed_time
 
 
+@pytest.mark.parametrize(
+    ("layout", "pdf_path", "annotation_path"),
+    [
+        (
+            "sidecar",
+            Path("Books/Chollet - 2021 - Deep Learning with Python.pdf"),
+            Path("Books/Chollet - 2021 - Deep Learning with Python.annotations.md"),
+        ),
+        (
+            "bundle",
+            Path(
+                "Books/Chollet - 2021 - Deep Learning with Python/"
+                "Chollet - 2021 - Deep Learning with Python.pdf"
+            ),
+            Path("Books/Chollet - 2021 - Deep Learning with Python/annotations.md"),
+        ),
+    ],
+)
+def test_annotation_layout_controls_workspace_structure(
+    tmp_path: Path,
+    zotero_fixture: object,
+    layout: str,
+    pdf_path: Path,
+    annotation_path: Path,
+) -> None:
+    fixture = zotero_fixture
+    output = tmp_path / "exports"
+    with ZoteroDatabase(fixture.data_dir, database_path=fixture.database) as database:  # type: ignore[attr-defined]
+        records = database.list_collections()
+        CollectionExporter(
+            database,
+            output,
+            export_annotations=True,
+            annotation_layout=layout,
+        ).export_many(
+            [resolve_collection(records, "My-AI")], build_collection_forest(records)
+        )
+
+    workspace = output / "My-AI"
+    assert (workspace / pdf_path).is_file()
+    assert (workspace / annotation_path).is_file()
+    manifest = load_manifest(workspace / "manifest.json")
+    assert manifest is not None
+    assert manifest.annotation_layout == layout
+
+
+def test_existing_workspace_rejects_annotation_layout_change(
+    tmp_path: Path, zotero_fixture: object
+) -> None:
+    fixture = zotero_fixture
+    output = tmp_path / "exports"
+    _initial_export(output, fixture)
+    with ZoteroDatabase(fixture.data_dir, database_path=fixture.database) as database:  # type: ignore[attr-defined]
+        records = database.list_collections()
+        with pytest.raises(ExportError, match="Workspace uses annotation layout"):
+            CollectionExporter(database, output, annotation_layout="sidecar").export_many(
+                [resolve_collection(records, "My-AI")], build_collection_forest(records)
+            )
+
+
 def test_annotation_export_refuses_unmanaged_markdown(
     tmp_path: Path, zotero_fixture: object
 ) -> None:

@@ -131,3 +131,33 @@ def choose_available_name(
             reserved.add(normalized)
             return candidate
         index += 1
+
+
+def choose_available_component(
+    desired: str,
+    reserved: set[str],
+    *,
+    key: str | None = None,
+) -> str:
+    """Choose a collision-free directory component and reserve it case-insensitively."""
+
+    normalized = desired.casefold()
+    if normalized not in reserved:
+        reserved.add(normalized)
+        return desired
+
+    if key:
+        candidate = f"{desired} [{sanitize_component(key, max_length=32)}]"
+        normalized = candidate.casefold()
+        if normalized not in reserved:
+            reserved.add(normalized)
+            return candidate
+
+    index = 2
+    while True:
+        candidate = f"{desired} ({index})"
+        normalized = candidate.casefold()
+        if normalized not in reserved:
+            reserved.add(normalized)
+            return candidate
+        index += 1
