@@ -47,3 +47,22 @@ jobs:
       - name: Check package metadata
         run: python -m twine check dist/*
 
+  zotero-plugin:
+    name: Zotero 9 companion plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      - name: Check JavaScript and run plugin tests
+        run: node --check zotero-plugin/bootstrap.js && node --check zotero-plugin/zpm.js && node --test zotero-plugin/tests/*.test.cjs
+      - name: Build companion plugin
+        run: python scripts/build_zotero_plugin.py
+      - name: Verify XPI contents
+        run: unzip -t dist/zpm-zotero-*.xpi

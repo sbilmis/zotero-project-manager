@@ -34,8 +34,8 @@ from .metadata import (
     write_metadata_files,
 )
 from .models import Collection, CollectionNode, ExportStats, SyncChange, ZoteroAttachment
+from .source import ZoteroSource
 from .utils import is_within, sha256_file
-from .zotero import ZoteroDatabase
 
 LOGGER = logging.getLogger(__name__)
 Identity = tuple[str, str]
@@ -51,7 +51,7 @@ class CollectionExporter:
 
     def __init__(
         self,
-        database: ZoteroDatabase,
+        database: ZoteroSource,
         output_root: Path,
         *,
         recursive: bool = True,

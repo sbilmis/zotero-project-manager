@@ -1,0 +1,16 @@
+{
+  "manifest_version": 2,
+  "name": "Zotero Project Manager",
+  "version": "0.1.0",
+  "description": "Export Zotero collections to zpm workspaces without opening zotero.sqlite.",
+  "author": "Zotero Project Manager contributors",
+  "homepage_url": "https://github.com/sbilmis/zotero-project-manager",
+  "applications": {
+    "zotero": {
+      "id": "zpm@zotero-project-manager",
+      "update_url": "https://raw.githubusercontent.com/sbilmis/zotero-project-manager/main/zotero-plugin/updates.json",
+      "strict_min_version": "9.0",
+      "strict_max_version": "9.*"
+    }
+  }
+}

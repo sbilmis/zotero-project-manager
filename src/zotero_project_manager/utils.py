@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 import tempfile
 from hashlib import sha256
 from pathlib import Path
@@ -49,6 +50,23 @@ def atomic_write_text(path: Path, content: str) -> None:
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
             handle.write(content)
         temporary_path.replace(path)
+    except BaseException:
+        temporary_path.unlink(missing_ok=True)
+        raise
+
+
+def atomic_copy_file(source: Path, destination: Path) -> None:
+    """Atomically copy one file, preserving its metadata where possible."""
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{destination.name}.", dir=destination.parent
+    )
+    os.close(descriptor)
+    temporary_path = Path(temporary_name)
+    try:
+        shutil.copy2(source, temporary_path)
+        temporary_path.replace(destination)
     except BaseException:
         temporary_path.unlink(missing_ok=True)
         raise

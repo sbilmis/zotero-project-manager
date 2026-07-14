@@ -2,6 +2,26 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 0.8.0 — 2026-07-14
+
+- Add the optional Zotero 9 companion plugin with collection context-menu commands
+  for PDF export, PDF plus annotation export, output and executable selection, and
+  installation checks.
+- Add a validated, size-bounded plugin snapshot bridge so exports initiated inside
+  Zotero never open `zotero.sqlite` and are unaffected by SQLite locks.
+- Keep all copying, filename, manifest, metadata, annotation, and safety behavior in
+  the Python exporter instead of duplicating it in the plugin.
+- Export cached Zotero image and ink annotation previews as managed PNG assets and
+  embed them in the generated Markdown without writing to Zotero's cache.
+- Restrict plugin-provided image paths to PNG files inside Zotero's cache and protect
+  exported asset folders with zpm safety markers.
+- Expand `zpm doctor` with stable check identifiers, JSON output, Zotero application
+  and runtime detection, attachment availability counts, configuration reporting,
+  and more actionable output safety checks.
+- Bound SQLite snapshot attempts to prevent indefinite waits when Zotero is busy.
+- Add Python bridge/diagnostic tests, dependency-free JavaScript plugin tests, a
+  reproducible XPI builder, and a dedicated Zotero 9 CI job.
+
 ## 0.6.0 — 2026-07-13
 
 - Add opt-in `--annotations` export for PDF highlights, underlines, comments,
