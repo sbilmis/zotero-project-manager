@@ -49,6 +49,25 @@ def test_relative_link_requires_explicit_base(tmp_path: Path, zotero_fixture: ob
         ).resolve()
 
 
+def test_image_annotation_uses_existing_read_only_cache(zotero_fixture: object) -> None:
+    fixture = zotero_fixture
+    image = fixture.data_dir / "cache" / "library" / "ANNOT001.png"  # type: ignore[attr-defined]
+    image.parent.mkdir(parents=True)
+    image.write_bytes(b"cached-annotation")
+    connection = sqlite3.connect(fixture.database)  # type: ignore[attr-defined]
+    connection.execute("UPDATE itemAnnotations SET type = 3 WHERE itemID = 102")
+    connection.commit()
+    connection.close()
+
+    with ZoteroDatabase(
+        fixture.data_dir, database_path=fixture.database  # type: ignore[attr-defined]
+    ) as database:
+        annotation = database.annotations_for_attachment(101)[0]
+
+    assert annotation.annotation_type == "image"
+    assert annotation.image_path == image
+
+
 def test_locked_database_error_explains_how_to_retry(zotero_fixture: object) -> None:
     fixture = zotero_fixture
     database = ZoteroDatabase(fixture.data_dir, database_path=fixture.database)  # type: ignore[attr-defined]

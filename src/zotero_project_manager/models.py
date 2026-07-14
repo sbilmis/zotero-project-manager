@@ -61,6 +61,7 @@ class ZoteroAnnotation:
     date_added: str
     date_modified: str
     tags: tuple[str, ...] = ()
+    image_path: Path | None = None
 
 
 @dataclass(frozen=True, slots=True)

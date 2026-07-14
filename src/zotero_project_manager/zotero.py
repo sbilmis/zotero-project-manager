@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import sqlite3
 import tempfile
+import time
 from pathlib import Path
 from types import TracebackType
 from urllib.parse import unquote, urlparse
@@ -20,6 +21,11 @@ _ANNOTATION_TYPES = {
     5: "underline",
     6: "text",
 }
+_DEFAULT_SNAPSHOT_TIMEOUT = 10.0
+
+
+class _SnapshotTimeout(RuntimeError):
+    """Raised internally when SQLite cannot produce a snapshot promptly."""
 
 
 class ZoteroDatabaseError(RuntimeError):
@@ -63,6 +69,7 @@ class ZoteroDatabase:
         database_path: Path | None = None,
         linked_attachment_base_dir: Path | None = None,
         snapshot: bool = False,
+        snapshot_timeout: float = _DEFAULT_SNAPSHOT_TIMEOUT,
     ) -> None:
         self.data_dir = (zotero_data_dir or default_zotero_data_dir()).expanduser().resolve()
         self.database_path = (
@@ -76,6 +83,9 @@ class ZoteroDatabase:
             else None
         )
         self.snapshot = snapshot
+        if snapshot_timeout <= 0:
+            raise ValueError("snapshot_timeout must be greater than zero")
+        self.snapshot_timeout = snapshot_timeout
         self._connection: sqlite3.Connection | None = None
         self._temporary_directory: tempfile.TemporaryDirectory[str] | None = None
 
@@ -106,7 +116,22 @@ class ZoteroDatabase:
                 snapshot_path = Path(self._temporary_directory.name) / "zotero.sqlite"
                 snapshot_connection = sqlite3.connect(snapshot_path)
                 try:
-                    source.backup(snapshot_connection)
+                    deadline = time.monotonic() + self.snapshot_timeout
+
+                    def stop_if_timed_out(
+                        _status: int,
+                        _remaining: int,
+                        _total: int,
+                    ) -> None:
+                        if time.monotonic() >= deadline:
+                            raise _SnapshotTimeout
+
+                    source.backup(
+                        snapshot_connection,
+                        pages=256,
+                        progress=stop_if_timed_out,
+                        sleep=0.1,
+                    )
                 finally:
                     snapshot_connection.close()
                     source.close()
@@ -116,6 +141,14 @@ class ZoteroDatabase:
             self._connection.row_factory = sqlite3.Row
             self._connection.execute("PRAGMA query_only = ON")
             self._connection.execute("BEGIN")
+        except _SnapshotTimeout as exc:
+            self.close()
+            raise ZoteroDatabaseError(
+                "Could not create a read-only Zotero snapshot within "
+                f"{self.snapshot_timeout:g} seconds. Zotero is busy; wait for syncing or "
+                "maintenance to finish, or use the Zotero companion plugin, which exports "
+                "through Zotero's in-process read APIs without opening zotero.sqlite."
+            ) from exc
         except sqlite3.Error as exc:
             self.close()
             raise _database_error("Could not read Zotero database", exc) from exc
@@ -254,6 +287,7 @@ class ZoteroDatabase:
                     annotations.sortIndex,
                     annotations.position,
                     annotations.authorName,
+                    items.libraryID,
                     items.dateAdded,
                     items.dateModified
                 FROM itemAnnotations AS annotations
@@ -265,27 +299,67 @@ class ZoteroDatabase:
             ).fetchall()
         except sqlite3.Error as exc:
             raise _database_error("Could not read attachment annotations", exc) from exc
-        return tuple(
-            ZoteroAnnotation(
-                annotation_id=int(row["annotationID"]),
-                annotation_key=str(row["annotationKey"]),
-                attachment_id=int(row["attachmentID"]),
-                annotation_type=_ANNOTATION_TYPES.get(
-                    int(row["annotationType"]), f"unknown-{row['annotationType']}"
-                ),
-                text=str(row["text"]) if row["text"] else None,
-                comment=str(row["comment"]) if row["comment"] else None,
-                color=str(row["color"]) if row["color"] else None,
-                page_label=str(row["pageLabel"]) if row["pageLabel"] else None,
-                sort_index=str(row["sortIndex"]),
-                position=str(row["position"]),
-                author_name=str(row["authorName"]) if row["authorName"] else None,
-                date_added=str(row["dateAdded"]),
-                date_modified=str(row["dateModified"]),
-                tags=self._item_tags(int(row["annotationID"])),
+        result: list[ZoteroAnnotation] = []
+        for row in rows:
+            annotation_type = _ANNOTATION_TYPES.get(
+                int(row["annotationType"]), f"unknown-{row['annotationType']}"
             )
-            for row in rows
-        )
+            result.append(
+                ZoteroAnnotation(
+                    annotation_id=int(row["annotationID"]),
+                    annotation_key=str(row["annotationKey"]),
+                    attachment_id=int(row["attachmentID"]),
+                    annotation_type=annotation_type,
+                    text=str(row["text"]) if row["text"] else None,
+                    comment=str(row["comment"]) if row["comment"] else None,
+                    color=str(row["color"]) if row["color"] else None,
+                    page_label=str(row["pageLabel"]) if row["pageLabel"] else None,
+                    sort_index=str(row["sortIndex"]),
+                    position=str(row["position"]),
+                    author_name=(
+                        str(row["authorName"]) if row["authorName"] else None
+                    ),
+                    date_added=str(row["dateAdded"]),
+                    date_modified=str(row["dateModified"]),
+                    tags=self._item_tags(int(row["annotationID"])),
+                    image_path=self._annotation_image_path(
+                        int(row["libraryID"]),
+                        str(row["annotationKey"]),
+                        annotation_type,
+                    ),
+                )
+            )
+        return tuple(result)
+
+    def _annotation_image_path(
+        self, library_id: int, annotation_key: str, annotation_type: str
+    ) -> Path | None:
+        """Return an existing cached annotation PNG without modifying Zotero."""
+
+        if annotation_type not in {"image", "ink"}:
+            return None
+        try:
+            library = self.connection.execute(
+                "SELECT type FROM libraries WHERE libraryID = ?", (library_id,)
+            ).fetchone()
+            if not library:
+                return None
+            library_type = str(library["type"])
+            if library_type == "user":
+                directory = self.data_dir / "cache" / "library"
+            elif library_type == "group":
+                group = self.connection.execute(
+                    "SELECT groupID FROM groups WHERE libraryID = ?", (library_id,)
+                ).fetchone()
+                if not group:
+                    return None
+                directory = self.data_dir / "cache" / "groups" / str(group["groupID"])
+            else:
+                return None
+        except sqlite3.Error as exc:
+            raise _database_error("Could not resolve annotation image cache", exc) from exc
+        candidate = (directory / f"{annotation_key}.png").resolve()
+        return candidate if candidate.is_file() else None
 
     def child_notes_for_item(
         self,

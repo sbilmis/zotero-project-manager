@@ -1,0 +1,19 @@
+{
+  "addons": {
+    "zpm@zotero-project-manager": {
+      "updates": [
+        {
+          "version": "0.1.0",
+          "update_link": "https://github.com/sbilmis/zotero-project-manager/releases/download/v0.8.0/zpm-zotero-0.1.0.xpi",
+          "update_hash": "sha256:b3ebbe70b19e2e0b51ee1fb8f725e3d1c7f95101ea1d05bd373addf1e95b2672",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "9.0",
+              "strict_max_version": "9.*"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

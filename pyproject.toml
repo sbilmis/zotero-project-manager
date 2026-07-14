@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zotero-project-manager"
-version = "0.6.0"
+version = "0.8.0"
 description = "Export Zotero collections into clean, incremental research workspaces."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [{ name = "Zotero Project Manager contributors" }]
-keywords = ["zotero", "research", "cli", "pdf"]
+keywords = ["zotero", "research", "cli", "pdf", "annotations", "plugin"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",

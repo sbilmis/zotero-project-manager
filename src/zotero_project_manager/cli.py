@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import json
+from dataclasses import asdict, replace
 from pathlib import Path
-from dataclasses import replace
 from typing import Annotated
 
 import typer
 
 from . import __version__
+from .bridge import BridgeError, BridgeSource
 from .collections import (
     CollectionError,
     build_collection_forest,
@@ -285,6 +287,63 @@ def export(
     _print_stats(stats, show_changes=dry_run or prune)
 
 
+@app.command("plugin-export", hidden=True)
+def plugin_export(
+    ctx: typer.Context,
+    snapshot_file: Annotated[
+        Path,
+        typer.Argument(help="Temporary JSON snapshot created by the Zotero companion plugin."),
+    ],
+    collection: Annotated[str, typer.Argument(help="Selected Zotero collection key.")],
+    output: Annotated[
+        Path,
+        typer.Option("--output", "-o", help="Parent directory for the exported workspace."),
+    ],
+    recursive: Annotated[
+        bool,
+        typer.Option("--recursive/--no-recursive", help="Include descendant collections."),
+    ] = True,
+    annotations: Annotated[
+        bool,
+        typer.Option("--annotations/--no-annotations", help="Export annotations and child notes."),
+    ] = False,
+    metadata: Annotated[
+        bool,
+        typer.Option("--metadata/--no-metadata", help="Generate metadata and index files."),
+    ] = True,
+    pdf_only: Annotated[
+        bool,
+        typer.Option("--pdf-only/--include-non-pdf", help="Select attachment types."),
+    ] = True,
+    filename_template: Annotated[
+        str | None,
+        typer.Option("--filename-template", help="Metadata filename ordering preset."),
+    ] = None,
+) -> None:
+    """Export a lock-free snapshot supplied by the Zotero companion plugin."""
+
+    config = _config(ctx)
+    try:
+        source = BridgeSource.load(snapshot_file)
+        records = source.list_collections()
+        forest = build_collection_forest(records)
+        selected = resolve_collection(records, collection)
+        stats = CollectionExporter(
+            source,
+            output,
+            recursive=recursive,
+            include_non_pdf=not pdf_only,
+            export_metadata=metadata,
+            export_annotations=annotations,
+            filename_template=_filename_template(filename_template, config),
+        ).export_many([selected], forest)
+    except (BridgeError, CollectionError, ConfigError, ExportError, OSError) as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"Zotero {source.zotero_version} companion snapshot exported.")
+    _print_stats(stats)
+
+
 @app.command()
 def status(
     ctx: typer.Context,
@@ -397,6 +456,10 @@ def doctor(
         bool,
         typer.Option("--snapshot", help="Test using a temporary SQLite snapshot."),
     ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable diagnostic results."),
+    ] = False,
 ) -> None:
     """Diagnose Zotero database, attachment, and output paths."""
 
@@ -406,10 +469,14 @@ def doctor(
         database_path=database,
         linked_attachment_base_dir=_linked_dir(linked_attachment_base_dir, config),
         output_root=output or config.output_dir,
+        config_path=config.path,
         snapshot=snapshot,
     )
-    for result in results:
-        typer.echo(f"[{result.level.upper():7}] {result.message}")
+    if json_output:
+        typer.echo(json.dumps([asdict(result) for result in results], indent=2))
+    else:
+        for result in results:
+            typer.echo(f"[{result.level.upper():7}] {result.code}: {result.message}")
     if any(result.level == "error" for result in results):
         raise typer.Exit(code=1)
 

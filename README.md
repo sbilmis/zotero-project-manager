@@ -7,7 +7,8 @@ writes into a separate output directory.
 The current release supports recursive collection export, multiple collections,
 configurable portable filenames, incremental updates, SHA-256 verification,
 safe pruning, DOI/tag metadata, opt-in annotation and child-note Markdown,
-research indexes, dry runs, diagnostics, and a versioned JSON manifest.
+research indexes, comprehensive diagnostics, an optional Zotero 9 companion
+plugin, and a versioned JSON manifest.
 
 ## Quick start: export `My-AI`
 
@@ -68,6 +69,55 @@ zpm doctor --output ~/ResearchProjects
 zpm export --help
 zpm --version
 ```
+
+## Zotero 9 companion plugin
+
+The optional companion plugin adds **Export with zpm** to a collection's
+right-click menu in Zotero 9:
+
+```text
+Export with zpm
+    Export PDFs
+    Export PDFs + Annotations
+    Choose Export Folder…
+    Choose zpm Executable…
+    Check zpm Installation
+```
+
+Install `zpm` first, then download `zpm-zotero-0.1.0.xpi` from the
+[v0.8.0 GitHub release](https://github.com/sbilmis/zotero-project-manager/releases/tag/v0.8.0).
+In Zotero, open **Tools → Plugins**, use the gear menu, choose
+**Install Plugin From File…**, and select the downloaded XPI.
+
+The first export asks for an output folder and remembers it. The plugin discovers
+Homebrew installations automatically; **Choose zpm Executable…** supports pipx,
+virtual-environment, and other custom installations. It reads the selected collection with
+Zotero's in-process APIs and gives zpm a temporary, validated JSON snapshot. This
+means plugin exports work while Zotero is open without reading or writing
+`zotero.sqlite`. The temporary snapshot is removed after the command finishes.
+
+The plugin is deliberately a thin interface: the Python package remains the only
+implementation of copying, manifests, filenames, metadata, and annotation export.
+
+## Doctor and readiness checks
+
+Run a human-readable readiness audit:
+
+```bash
+zpm doctor --output ~/ResearchProjects
+```
+
+It reports the zpm/Python runtime, Zotero application version and running state,
+data and database locations, read-only SQLite access, collection count, available,
+missing, or unresolved attachments, configuration location, storage, and output
+safety. Machine-readable output is available for support tooling:
+
+```bash
+zpm doctor --output ~/ResearchProjects --json
+```
+
+Errors produce a nonzero exit status. Warnings identify optional or transient
+conditions without changing Zotero or the workspace.
 
 ## Configuration and named projects
 
@@ -136,12 +186,17 @@ zpm export "My-AI" --annotations
 
 For each attachment, `zpm` creates a hierarchy-preserving Markdown document under
 `Annotations/`. It includes highlights, underlines, comments, colors, page labels,
-annotation tags, modification dates, image/ink annotation metadata, and child notes.
+annotation tags, modification dates, image/ink annotations, and child notes. Cached
+image and ink annotation previews are copied as PNG files into a managed `.assets`
+folder beside the Markdown document and embedded with relative Markdown links. If
+Zotero has no cached preview, the Markdown records that fact instead of failing the
+whole export.
 For items in the personal Zotero library, links open the PDF or annotation in Zotero.
 
-Generated annotation files carry a safety marker. `zpm` refuses to replace an
-unmanaged Markdown file at the same path and avoids rewriting unchanged generated
-files. Zotero and its PDFs remain read-only.
+Generated annotation files and asset folders carry safety markers. `zpm` refuses to
+replace unmanaged Markdown or manage an existing unmarked asset folder, and avoids
+rewriting unchanged generated files. Zotero, its database, PDFs, and annotation cache
+remain read-only.
 
 ## Filename preferences
 
@@ -195,7 +250,10 @@ export to a new output directory when reorganizing existing filenames.
 
 - The Zotero database is opened with SQLite `mode=ro` and `PRAGMA query_only`.
 - Queries run in a consistent read-only SQLite transaction. Optional
-  `--snapshot` mode uses the SQLite backup API when an isolated copy is useful.
+  `--snapshot` mode uses the SQLite backup API with a hard timeout when an
+  isolated copy is useful.
+- Companion-plugin exports use Zotero 9's in-process read APIs and never open
+  `zotero.sqlite`.
 - `zpm` never renames, moves, or edits Zotero files.
 - Output paths inside the Zotero data directory are rejected.
 - Existing directories without a `zpm` manifest are rejected unless explicitly
@@ -354,6 +412,8 @@ If `zpm` reports that the database is locked:
 1. Wait for Zotero synchronization or maintenance to finish, then retry.
 2. If it remains locked, close Zotero completely and run the command again.
 3. Use `zpm doctor --output ~/ResearchProjects` to check the configuration.
+4. When Zotero must remain open, use the Zotero 9 companion plugin; its snapshot
+   bridge does not open the SQLite database.
 
 `zpm` does not modify Zotero when a lock occurs. A lock error happens before the
 collection can be read or any export changes are applied.
@@ -377,14 +437,21 @@ src/zotero_project_manager/
     manifest.py     versioned manifest serialization
     metadata.py     JSON metadata and Markdown research indexes
     annotations.py  annotation and child-note Markdown generation
+    bridge.py       validated lock-free Zotero plugin snapshots
+    source.py       read-only exporter source interface
     models.py       shared domain dataclasses
     diagnostics.py  read-only doctor checks
     config.py       TOML defaults and named projects
     utils.py        logging and path safety helpers
+
+zotero-plugin/
+    bootstrap.js    Zotero 9 lifecycle hooks
+    zpm.js          context menu, snapshot bridge, and CLI process integration
+    manifest.json   Zotero compatibility and update metadata
 ```
 
 ## Current non-goals and roadmap
 
-Better BibTeX, DEVONthink or automatic personal NotebookLM uploads, watch mode, a
-GUI, and symlink mode are not implemented in v0.6.0. They remain possible future
-additions; Zotero continues to be the source of truth.
+Better BibTeX export, DEVONthink or automatic personal NotebookLM uploads, watch
+mode, a standalone GUI, and symlink mode are not implemented in v0.8.0. They
+remain possible future additions; Zotero continues to be the source of truth.

@@ -36,6 +36,7 @@ def zotero_fixture(tmp_path: Path) -> ZoteroFixture:
         );
         CREATE TABLE items (
             itemID INTEGER PRIMARY KEY,
+            libraryID INTEGER NOT NULL DEFAULT 1,
             key TEXT NOT NULL,
             dateAdded TEXT NOT NULL DEFAULT '2026-07-01 10:00:00',
             dateModified TEXT NOT NULL DEFAULT '2026-07-02 11:00:00'
@@ -102,6 +103,14 @@ def zotero_fixture(tmp_path: Path) -> ZoteroFixture:
             note TEXT,
             title TEXT
         );
+        CREATE TABLE libraries (
+            libraryID INTEGER PRIMARY KEY,
+            type TEXT NOT NULL
+        );
+        CREATE TABLE groups (
+            groupID INTEGER PRIMARY KEY,
+            libraryID INTEGER NOT NULL UNIQUE
+        );
         """
     )
     connection.executemany(
@@ -123,6 +132,7 @@ def zotero_fixture(tmp_path: Path) -> ZoteroFixture:
             (201, "ATTACH02"),
         ],
     )
+    connection.execute("INSERT INTO libraries VALUES (?, ?)", (1, "user"))
     connection.executemany(
         "INSERT INTO collectionItems VALUES (?, ?)",
         [(2, 100), (1, 200)],
