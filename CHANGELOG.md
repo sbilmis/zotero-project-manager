@@ -2,6 +2,28 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 1.0.0 — 2026-07-19
+
+- Make Zotero plugin 1.0.0 completely self-contained: exports now run through a
+  native JavaScript engine with no Python, Homebrew, pipx, executable path, temporary
+  bridge file, or subprocess requirement.
+- Retain the Python `zpm` CLI as an independent interface for terminal automation,
+  scheduled exports, safe pruning, full verification, and direct SQLite workflows.
+- Export non-PDF Zotero attachments, including `README.md`, through a plugin setting
+  while limiting generated PDF annotation documents to PDF attachments.
+- Move manifests, metadata, indexes, and summaries under `.zpm/` so user attachments
+  can safely use ordinary project filenames; migrate root-level manifest v1–v4
+  workspaces after a successful export.
+- Preserve portable filename presets, recursive collection layouts, incremental
+  SHA-256 synchronization, re-added-file reconciliation, annotation layouts, cached
+  image assets, notes, DOI/tag metadata, and unmanaged-file protections in JavaScript.
+- Simplify the collection menu to export actions and Settings, and remove executable
+  selection and installation diagnostics from the Zotero UI.
+- Document Zotero-managed automatic plugin updates with manual checking as a fallback.
+- Expand cross-interface coverage to 72 Python tests and 12 native-plugin tests,
+  including Markdown collisions, legacy migration, symlink escapes, and control-file
+  ownership checks.
+
 ## 0.9.0 — 2026-07-14
 
 - Add `separate`, `sidecar`, and `bundle` annotation workspace layouts for direct

@@ -4,7 +4,7 @@
     <groupbox id="zpm-preferences-locations">
         <label><html:h2>Export locations</html:h2></label>
         <html:p class="zpm-preferences-intro">
-            Choose where project workspaces are created and which zpm executable Zotero runs.
+            Choose where Zotero Project Manager creates and updates project workspaces.
         </html:p>
 
         <html:div class="zpm-preferences-field-grid">
@@ -17,17 +17,22 @@
                 Each Zotero collection becomes a project workspace inside this folder.
             </html:span>
 
-            <html:label for="zpm-preferences-executable">zpm executable</html:label>
-            <html:div class="zpm-preferences-path-row">
-                <html:input id="zpm-preferences-executable" type="text" spellcheck="false"/>
-                <html:button id="zpm-preferences-executable-button" type="button">Choose…</html:button>
-                <html:button id="zpm-preferences-test-button" type="button">Test</html:button>
-            </html:div>
-            <html:span class="zpm-preferences-help">
-                Homebrew installs are detected automatically; set this only for a custom installation.
-            </html:span>
         </html:div>
         <html:p id="zpm-preferences-status" class="zpm-preferences-status" role="status"></html:p>
+    </groupbox>
+
+    <groupbox id="zpm-preferences-content">
+        <label><html:h2>Exported content</html:h2></label>
+        <html:p class="zpm-preferences-intro">
+            PDFs are always exported. Zotero notes and annotations are selected from the collection menu.
+        </html:p>
+        <html:label class="zpm-preferences-checkbox-row">
+            <html:input id="zpm-preferences-include-non-pdf" type="checkbox"/>
+            Include other attached files such as Markdown, text, images, and data files
+        </html:label>
+        <html:p class="zpm-preferences-help">
+            Original file attachments are copied alongside PDFs. Generated zpm files are kept safely under .zpm/.
+        </html:p>
     </groupbox>
 
     <groupbox id="zpm-preferences-layout">
@@ -36,6 +41,24 @@
             Select how generated Markdown and cached annotation images are arranged around PDFs.
         </html:p>
         <html:div class="zpm-preferences-layout-grid">
+            <html:label for="zpm-preferences-filename-select">Attachment filename order</html:label>
+            <html:select id="zpm-preferences-filename-select">
+                <html:option value="author_year_title">Author — Year — Title</html:option>
+                <html:option value="author_title_year">Author — Title — Year</html:option>
+                <html:option value="year_author_title">Year — Author — Title</html:option>
+                <html:option value="year_title_author">Year — Title — Author</html:option>
+                <html:option value="title_author_year">Title — Author — Year</html:option>
+                <html:option value="title_year_author">Title — Year — Author</html:option>
+                <html:option value="author_title">Author — Title</html:option>
+                <html:option value="year_title">Year — Title</html:option>
+                <html:option value="title_author">Title — Author</html:option>
+                <html:option value="title_year">Title — Year</html:option>
+                <html:option value="title">Title only</html:option>
+            </html:select>
+            <html:p class="zpm-preferences-help">
+                Existing workspaces retain the filename order recorded in their manifest.
+            </html:p>
+
             <html:label for="zpm-preferences-layout-select">Workspace arrangement</html:label>
             <html:select id="zpm-preferences-layout-select">
                 <html:option value="separate">Separate — generated files under Annotations/</html:option>
@@ -53,8 +76,8 @@
     <groupbox id="zpm-preferences-safety">
         <label><html:h2>Read-only guarantee</html:h2></label>
         <html:p class="zpm-preferences-safety-copy">
-            zpm reads Zotero metadata, PDFs, notes, and cached annotation images. It never writes to
-            zotero.sqlite or modifies files inside the Zotero data directory.
+            The plugin reads Zotero metadata, attachments, notes, and cached annotation images. It
+            never writes to zotero.sqlite or modifies files inside the Zotero data directory.
         </html:p>
     </groupbox>
 </vbox>

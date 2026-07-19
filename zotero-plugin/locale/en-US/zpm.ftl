@@ -2,19 +2,10 @@ zpm-menu-root =
     .label = Export with zpm
 
 zpm-menu-export-pdfs =
-    .label = Export PDFs
+    .label = Export Collection
 
 zpm-menu-export-annotations =
-    .label = Export PDFs + Annotations
-
-zpm-menu-choose-output =
-    .label = Choose Export Folder…
-
-zpm-menu-choose-executable =
-    .label = Choose zpm Executable…
-
-zpm-menu-check-installation =
-    .label = Check zpm Installation
+    .label = Export Collection + Annotations
 
 zpm-menu-settings =
     .label = Settings…

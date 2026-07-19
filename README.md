@@ -7,8 +7,8 @@ writes into a separate output directory.
 The current release supports recursive collection export, multiple collections,
 configurable portable filenames, incremental updates, SHA-256 verification,
 safe pruning, DOI/tag metadata, opt-in annotation and child-note Markdown with
-three workspace layouts, research indexes, comprehensive diagnostics, an optional
-Zotero 9 companion plugin with a settings pane, and a versioned JSON manifest.
+three workspace layouts, research indexes, comprehensive diagnostics, a self-contained
+Zotero 9 plugin with a settings pane, and a versioned JSON manifest.
 
 ## Quick start: export `My-AI`
 
@@ -72,40 +72,53 @@ zpm --version
 
 ## Zotero 9 companion plugin
 
-The optional companion plugin adds **Export with zpm** to a collection's
-right-click menu in Zotero 9:
+The self-contained companion plugin adds **Export with zpm** to a collection's
+right-click menu in Zotero 9. It does not require Python, Homebrew, pipx, or an
+external executable:
 
 ```text
 Export with zpm
-    Export PDFs
-    Export PDFs + Annotations
-    Choose Export Folder…
-    Choose zpm Executable…
-    Check zpm Installation
+    Export Collection
+    Export Collection + Annotations
     Settings…
 ```
 
-Install `zpm` first, then download `zpm-zotero-0.2.0.xpi` from the
-[v0.9.0 GitHub release](https://github.com/sbilmis/zotero-project-manager/releases/tag/v0.9.0).
+Download the versioned `.xpi` from the matching GitHub release.
 In Zotero, open **Tools → Plugins**, use the gear menu, choose
 **Install Plugin From File…**, and select the downloaded XPI.
 
 Open **Settings…** from the collection menu, or open Zotero **Settings → Zotero
-Project Manager**, to choose the output folder, test the zpm installation, and select
-the annotation layout. The plugin discovers Homebrew installations automatically;
-**Choose zpm Executable…** supports pipx, virtual-environment, and other custom
-installations. It reads the selected collection with Zotero's in-process APIs and
-gives zpm a temporary, validated JSON snapshot. This means plugin exports work while
-Zotero is open without reading or writing `zotero.sqlite`. The temporary snapshot is
-removed after the command finishes.
+Project Manager**, to choose the output folder, include non-PDF attachments such as
+`README.md`, select filename ordering, and choose the annotation layout. The plugin
+reads the selected collection through Zotero's in-process APIs and performs copying,
+hashing, manifests, metadata, and annotation rendering itself. It never reads or
+writes `zotero.sqlite` directly.
 
-The plugin supports Zotero's normal update mechanism. After a new zpm release, open
-**Tools → Plugins**, use the gear menu, and choose **Check for Updates**. Zotero reads
-the versioned release information from the plugin's update feed and installs compatible
-versions; you do not need to remove the existing plugin first.
+Zotero installs compatible plugin releases automatically when **Tools → Plugins →
+gear → Update Add-ons Automatically** is enabled. **Check for Updates** in the same
+menu remains available as a manual fallback. The versioned update feed uses immutable,
+SHA-256-verified XPI release assets.
 
-The plugin is deliberately a thin interface: the Python package remains the only
-implementation of copying, manifests, filenames, metadata, and annotation export.
+The Python `zpm` CLI remains available separately for terminal workflows, scheduled
+exports, CI, safe pruning, and full verification. The Zotero plugin does not depend on it.
+
+### Plugin and CLI responsibilities
+
+The plugin and CLI share the same core workspace format and export behavior, but the
+CLI intentionally retains advanced administration and automation features:
+
+| Capability | Zotero plugin | Python CLI |
+| --- | --- | --- |
+| PDFs, optional non-PDF files, metadata, annotations, notes, and images | Yes | Yes |
+| Recursive collections, filename templates, layouts, and incremental SHA-256 updates | Yes | Yes |
+| Multiple root collections in one operation | One at a time | Yes |
+| Dry-run, status, pruning, full verification, and unmanaged-folder adoption | No | Yes |
+| Diagnostics, named projects, saved TOML configuration, and scheduled automation | No | Yes |
+| Linked-attachment base-directory and SQLite snapshot controls | No | Yes |
+| Runs without Python or direct SQLite access | Yes | No |
+
+This keeps the interactive plugin focused and conservative while the CLI provides
+batch operations and explicit file-deletion or workspace-adoption controls.
 
 ## Doctor and readiness checks
 
@@ -168,11 +181,11 @@ zpm sync ai
 
 ## Metadata and research index
 
-Exports generate two additional workspace files by default:
+Exports generate two control files under the workspace's hidden `.zpm/` directory by default:
 
-- `metadata.json` contains collection keys, Zotero item and attachment keys,
+- `.zpm/metadata.json` contains collection keys, Zotero item and attachment keys,
   titles, dates, creators, DOI, tags, source and destination paths, state, and SHA-256.
-- `INDEX.md` provides a human-readable table with DOI links and relative PDF links.
+- `.zpm/INDEX.md` provides a human-readable table with DOI links and relative file links.
 
 Disable these generated artifacts when needed:
 
@@ -180,7 +193,7 @@ Disable these generated artifacts when needed:
 zpm export "My-AI" --output ~/ResearchProjects --no-metadata
 ```
 
-For safety, `zpm` refuses to overwrite an existing `metadata.json` or `INDEX.md`
+For safety, `zpm` refuses to overwrite an existing `.zpm/metadata.json` or `.zpm/INDEX.md`
 unless that file was previously generated by `zpm`.
 
 ## Annotations and child notes
@@ -354,10 +367,10 @@ pytest
 
 ### Optional shell helpers
 
-For a checkout at `~/zotero-collection-mirror`, create its environment once:
+For a checkout at `~/developer/projects/zotero-project-manager`, create its environment once:
 
 ```bash
-cd ~/zotero-collection-mirror
+cd ~/developer/projects/zotero-project-manager
 python -m venv .venv
 .venv/bin/pip install -e .
 ```
@@ -365,7 +378,7 @@ python -m venv .venv
 Load the convenience functions in the current shell:
 
 ```bash
-source ~/zotero-collection-mirror/scripts/zpm-helper.sh
+source ~/developer/projects/zotero-project-manager/scripts/zpm-helper.sh
 ```
 
 Then use:
@@ -383,7 +396,7 @@ locations before sourcing the file when needed:
 ```bash
 export ZPM_ZOTERO_DIR="/path/to/Zotero"
 export ZPM_OUTPUT_DIR="/path/to/ResearchProjects"
-source ~/zotero-collection-mirror/scripts/zpm-helper.sh
+source ~/developer/projects/zotero-project-manager/scripts/zpm-helper.sh
 ```
 
 List collections, including the keys needed to disambiguate duplicate names:
@@ -429,7 +442,9 @@ the usable keys.
 
 ## Incremental behavior
 
-Each workspace contains `manifest.json` and `README.md`. On later runs, `zpm`
+Each workspace contains `.zpm/manifest.json` and `.zpm/export-summary.md`. Keeping
+generated control data under `.zpm/` leaves names such as `README.md`, `INDEX.md`, and
+`metadata.json` available for ordinary Zotero attachments. On later runs, `zpm`
 uses recorded source and destination metadata plus SHA-256 digests to:
 
 - leave unchanged files alone;
@@ -443,9 +458,8 @@ uses recorded source and destination metadata plus SHA-256 digests to:
 adopting an existing directory or replacing an unmanaged filename conflict.
 Use `--verify` for a full content audit even when file metadata appears unchanged.
 
-Manifest v1–v3 workspaces are read automatically with compatible defaults. A
-successful export writes the current manifest v4; `status` and `--dry-run` never
-rewrite it.
+Root-level manifest v1–v4 workspaces are read and migrated automatically. A successful
+export writes manifest v4 under `.zpm/`; `status` and `--dry-run` never rewrite it.
 
 ## Troubleshooting
 
@@ -460,8 +474,8 @@ If `zpm` reports that the database is locked:
 1. Wait for Zotero synchronization or maintenance to finish, then retry.
 2. If it remains locked, close Zotero completely and run the command again.
 3. Use `zpm doctor --output ~/ResearchProjects` to check the configuration.
-4. When Zotero must remain open, use the Zotero 9 companion plugin; its snapshot
-   bridge does not open the SQLite database.
+4. When Zotero must remain open, use the Zotero 9 companion plugin; its in-process
+   API does not open the SQLite database directly.
 
 `zpm` does not modify Zotero when a lock occurs. A lock error happens before the
 collection can be read or any export changes are applied.
@@ -494,13 +508,14 @@ src/zotero_project_manager/
 
 zotero-plugin/
     bootstrap.js    Zotero 9 lifecycle hooks
-    zpm.js          context menu, snapshot bridge, and CLI process integration
-    preferences.*   Zotero settings pane for paths and annotation layout
+    native-exporter.js incremental JavaScript export engine
+    zpm.js          context menu, Zotero data capture, and filesystem adapter
+    preferences.*   Zotero settings pane for paths, attachments, names, and layout
     manifest.json   Zotero compatibility and update metadata
 ```
 
 ## Current non-goals and roadmap
 
 Better BibTeX export, DEVONthink or automatic personal NotebookLM uploads, watch
-mode, a standalone GUI, and symlink mode are not implemented in v0.9.0. They
+mode, a standalone GUI, and symlink mode are not implemented. They
 remain possible future additions; Zotero continues to be the source of truth.

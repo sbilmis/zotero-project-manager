@@ -1,9 +1,10 @@
-/* global ChromeUtils, IOUtils, PathUtils, Services, Zotero */
+/* global ChromeUtils, Components, IOUtils, PathUtils, Services, ZPMNativeExporter, Zotero */
 
 const ZPM_PLUGIN_ID = "zpm@zotero-project-manager";
 const ZPM_PREF_OUTPUT = "extensions.zpm.outputDir";
-const ZPM_PREF_EXECUTABLE = "extensions.zpm.executablePath";
 const ZPM_PREF_ANNOTATION_LAYOUT = "extensions.zpm.annotationLayout";
+const ZPM_PREF_INCLUDE_NON_PDF = "extensions.zpm.includeNonPdf";
+const ZPM_PREF_FILENAME_TEMPLATE = "extensions.zpm.filenameTemplate";
 const ZPM_ANNOTATION_LAYOUTS = new Set(["separate", "sidecar", "bundle"]);
 const ZPM_SNAPSHOT_SCHEMA = 1;
 const ZPM_MAX_OUTPUT = 12000;
@@ -16,28 +17,6 @@ function zpmTags(item) {
   return item.getTags().map((value) => String(value.tag)).sort((a, b) => a.localeCompare(b));
 }
 
-function zpmCommandArguments(
-  snapshotPath,
-  collectionKey,
-  outputDir,
-  annotations,
-  annotationLayout = "separate",
-) {
-  const args = [
-    "plugin-export",
-    snapshotPath,
-    collectionKey,
-    "--output",
-    outputDir,
-    "--annotation-layout",
-    annotationLayout,
-  ];
-  if (annotations) {
-    args.push("--annotations");
-  }
-  return args;
-}
-
 function zpmTrimOutput(output) {
   const text = String(output || "").trim();
   if (text.length <= ZPM_MAX_OUTPUT) {
@@ -45,6 +24,143 @@ function zpmTrimOutput(output) {
   }
   return text.slice(0, ZPM_MAX_OUTPUT) + "\n…output truncated…";
 }
+
+const ZPMZoteroFileSystem = {
+  join(...parts) {
+    return PathUtils.join(...parts);
+  },
+
+  async exists(path) {
+    return IOUtils.exists(path);
+  },
+
+  async stat(path) {
+    const value = await IOUtils.stat(path);
+    return {
+      size: Number(value.size || 0),
+      mtimeMs: Number(value.lastModified || 0),
+      type: value.type,
+    };
+  },
+
+  async isFile(path) {
+    try {
+      return (await IOUtils.stat(path)).type === "regular";
+    } catch (_error) {
+      return false;
+    }
+  },
+
+  async makeDir(path) {
+    await IOUtils.makeDirectory(path, { createAncestors: true, ignoreExisting: true });
+  },
+
+  async readText(path) {
+    return IOUtils.readUTF8(path);
+  },
+
+  async writeTextAtomic(path, content) {
+    const parent = PathUtils.parent(path);
+    await this.makeDir(parent);
+    const temporary = PathUtils.join(
+      parent,
+      `.${PathUtils.filename(path)}.${Date.now()}-${Math.random().toString(16).slice(2)}.tmp`,
+    );
+    try {
+      await IOUtils.writeUTF8(temporary, content);
+      await IOUtils.move(temporary, path, { noOverwrite: false });
+    } finally {
+      await IOUtils.remove(temporary, { ignoreAbsent: true });
+    }
+  },
+
+  async copyAtomic(source, destination) {
+    const parent = PathUtils.parent(destination);
+    await this.makeDir(parent);
+    const temporary = PathUtils.join(
+      parent,
+      `.${PathUtils.filename(destination)}.${Date.now()}-${Math.random().toString(16).slice(2)}.tmp`,
+    );
+    try {
+      await IOUtils.copy(source, temporary, { noOverwrite: true });
+      await IOUtils.move(temporary, destination, { noOverwrite: false });
+    } finally {
+      await IOUtils.remove(temporary, { ignoreAbsent: true });
+    }
+  },
+
+  async hash(path) {
+    const hasher = Components.classes["@mozilla.org/security/hash;1"]
+      .createInstance(Components.interfaces.nsICryptoHash);
+    hasher.init(hasher.SHA256);
+    let offset = 0;
+    const chunkSize = 1024 * 1024;
+    while (true) {
+      const chunk = await IOUtils.read(path, { offset, maxBytes: chunkSize });
+      if (!chunk.length) break;
+      hasher.update(chunk, chunk.length);
+      offset += chunk.length;
+      if (chunk.length < chunkSize) break;
+    }
+    const binary = hasher.finish(false);
+    return Array.from(binary, (character) => character.charCodeAt(0).toString(16).padStart(2, "0"))
+      .join("");
+  },
+
+  async listFiles(root) {
+    const files = [];
+    const walk = async (directory, relative) => {
+      for (const child of await IOUtils.getChildren(directory)) {
+        const name = PathUtils.filename(child);
+        const childRelative = relative ? `${relative}/${name}` : name;
+        const info = await IOUtils.stat(child);
+        if (info.type === "directory") await walk(child, childRelative);
+        else if (info.type === "regular") files.push(childRelative);
+      }
+    };
+    if (await IOUtils.exists(root)) await walk(root, "");
+    return files;
+  },
+
+  async listDirectories(root) {
+    const directories = [];
+    const walk = async (directory, relative) => {
+      for (const child of await IOUtils.getChildren(directory)) {
+        const info = await IOUtils.stat(child);
+        if (info.type !== "directory") continue;
+        const name = PathUtils.filename(child);
+        const childRelative = relative ? `${relative}/${name}` : name;
+        directories.push(childRelative);
+        await walk(child, childRelative);
+      }
+    };
+    if (await IOUtils.exists(root)) await walk(root, "");
+    return directories;
+  },
+
+  async removeFile(path) {
+    await IOUtils.remove(path, { ignoreAbsent: true });
+  },
+
+  async realPath(path) {
+    const file = Components.classes["@mozilla.org/file/local;1"]
+      .createInstance(Components.interfaces.nsIFile);
+    file.initWithPath(path);
+    file.normalize();
+    return file.path;
+  },
+
+  async isWithin(path, parent) {
+    const normalize = (value) => {
+      let normalized = String(PathUtils.normalize(value)).replaceAll("\\", "/").replace(/\/+$/g, "");
+      if (Zotero.isWin) normalized = normalized.toLowerCase();
+      return normalized;
+    };
+    const child = normalize(path);
+    const root = normalize(parent);
+    return child === root || child.startsWith(`${root}/`);
+  },
+};
 
 var ZPMPlugin = {
   id: ZPM_PLUGIN_ID,
@@ -96,27 +212,6 @@ var ZPMPlugin = {
             { menuType: "separator" },
             {
               menuType: "menuitem",
-              l10nID: "zpm-menu-choose-output",
-              onCommand() {
-                void plugin.chooseOutputDirectory(true);
-              },
-            },
-            {
-              menuType: "menuitem",
-              l10nID: "zpm-menu-choose-executable",
-              onCommand() {
-                void plugin.chooseExecutable();
-              },
-            },
-            {
-              menuType: "menuitem",
-              l10nID: "zpm-menu-check-installation",
-              onCommand() {
-                void plugin.checkInstallation();
-              },
-            },
-            {
-              menuType: "menuitem",
               l10nID: "zpm-menu-settings",
               onCommand() {
                 Zotero.Utilities.Internal.openPreferences("zpm-preferences");
@@ -158,49 +253,33 @@ var ZPMPlugin = {
       if (!outputDir) {
         return;
       }
-      const executable = await this.findExecutable();
       const annotationLayout = this.annotationLayout();
       const snapshot = await this.buildSnapshot(row.ref, annotations);
-      const snapshotPath = PathUtils.join(
-        PathUtils.tempDir,
-        `zpm-zotero-${Date.now()}-${Math.random().toString(16).slice(2)}.json`,
-      );
-      await Zotero.File.putContentsAsync(snapshotPath, JSON.stringify(snapshot));
-      try {
-        const result = await this.runProcess(
-          executable,
-          zpmCommandArguments(
-            snapshotPath,
-            row.ref.key,
-            outputDir,
-            annotations,
-            annotationLayout,
+      const stats = await ZPMNativeExporter.exportSnapshot(
+        snapshot,
+        ZPMZoteroFileSystem,
+        row.ref.key,
+        {
+          outputDir,
+          exportAnnotations: annotations,
+          includeNonPdf: Boolean(Zotero.Prefs.get(ZPM_PREF_INCLUDE_NON_PDF)),
+          annotationLayout,
+          filenameTemplate: String(
+            Zotero.Prefs.get(ZPM_PREF_FILENAME_TEMPLATE) || "author_year_title",
           ),
-        );
-        if (result.exitCode !== 0) {
-          throw new Error(result.output || `zpm exited with status ${result.exitCode}`);
-        }
-        this.alert("Export complete", result.output || `${row.ref.name} was exported.`);
-      } finally {
-        await Zotero.File.removeIfExists(snapshotPath);
-      }
+        },
+      );
+      this.alert(
+        "Export complete",
+        `${stats.collectionName}: ${stats.copied} copied, ${stats.updated} updated, `
+          + `${stats.unchanged} unchanged, ${stats.missing} missing.\n\n${stats.workspace}`
+          + (stats.retainedSettings.length
+            ? `\n\nExisting workspace settings retained (${stats.retainedSettings.join(", ")}).`
+            : ""),
+      );
     } catch (error) {
       Zotero.logError(error);
       this.alert("zpm export failed", error.message || String(error));
-    }
-  },
-
-  async checkInstallation() {
-    try {
-      const executable = await this.findExecutable();
-      const result = await this.runProcess(executable, ["--version"]);
-      if (result.exitCode !== 0) {
-        throw new Error(result.output || `zpm exited with status ${result.exitCode}`);
-      }
-      this.alert("zpm is ready", `${result.output}\n\nExecutable: ${executable}`);
-    } catch (error) {
-      Zotero.logError(error);
-      this.alert("zpm was not found", error.message || String(error));
     }
   },
 
@@ -228,81 +307,6 @@ var ZPMPlugin = {
     }
     Zotero.Prefs.set(ZPM_PREF_OUTPUT, picker.file);
     return picker.file;
-  },
-
-  async chooseExecutable() {
-    try {
-      const saved = String(Zotero.Prefs.get(ZPM_PREF_EXECUTABLE) || "");
-      const { FilePicker } = ChromeUtils.importESModule(
-        "chrome://zotero/content/modules/filePicker.mjs",
-      );
-      const picker = new FilePicker();
-      picker.init(Zotero.getMainWindow(), "Choose the zpm executable", picker.modeOpen);
-      if (saved && await IOUtils.exists(saved)) {
-        picker.displayDirectory = PathUtils.parent(saved);
-      }
-      const result = await picker.show();
-      if (result !== picker.returnOK) {
-        return null;
-      }
-      if (!picker.file || !await IOUtils.exists(picker.file)) {
-        throw new Error("The selected zpm executable does not exist.");
-      }
-      Zotero.Prefs.set(ZPM_PREF_EXECUTABLE, picker.file);
-      this.alert("zpm executable saved", picker.file);
-      return picker.file;
-    } catch (error) {
-      Zotero.logError(error);
-      this.alert("Could not save zpm executable", error.message || String(error));
-      return null;
-    }
-  },
-
-  async findExecutable() {
-    const { Subprocess } = ChromeUtils.importESModule(
-      "resource://gre/modules/Subprocess.sys.mjs",
-    );
-    const configured = String(Zotero.Prefs.get(ZPM_PREF_EXECUTABLE) || "");
-    const environment = Subprocess.getEnvironment();
-    const home = environment.HOME || environment.USERPROFILE || "";
-    const candidates = [configured];
-    if (Zotero.isMac) {
-      candidates.push("/opt/homebrew/bin/zpm", "/usr/local/bin/zpm");
-    } else if (Zotero.isLinux) {
-      candidates.push("/home/linuxbrew/.linuxbrew/bin/zpm", "/usr/local/bin/zpm", "/usr/bin/zpm");
-    } else if (Zotero.isWin && home) {
-      candidates.push(PathUtils.join(home, ".local", "bin", "zpm.exe"));
-    }
-    if (home) {
-      candidates.push(PathUtils.join(home, ".local", "bin", Zotero.isWin ? "zpm.exe" : "zpm"));
-    }
-    for (const candidate of candidates) {
-      if (candidate && await IOUtils.exists(candidate)) {
-        return candidate;
-      }
-    }
-    try {
-      return await Subprocess.pathSearch(Zotero.isWin ? "zpm.exe" : "zpm", environment);
-    } catch (_error) {
-      throw new Error(
-        "Install zpm first (Homebrew: brew install sbilmis/tap/zpm), then choose Check zpm Installation again.",
-      );
-    }
-  },
-
-  async runProcess(command, args) {
-    const { Subprocess } = ChromeUtils.importESModule(
-      "resource://gre/modules/Subprocess.sys.mjs",
-    );
-    const process = await Subprocess.call({
-      command,
-      arguments: args,
-      environmentAppend: true,
-      stderr: "stdout",
-    });
-    const outputPromise = process.stdout.readString();
-    const { exitCode } = await process.wait();
-    return { exitCode, output: zpmTrimOutput(await outputPromise) };
   },
 
   async buildSnapshot(rootCollection, includeAnnotations) {
@@ -443,7 +447,6 @@ var ZPMPlugin = {
 
 if (typeof module !== "undefined") {
   module.exports = {
-    zpmCommandArguments,
     zpmCreatorName,
     zpmTrimOutput,
     ZPM_ANNOTATION_LAYOUTS,
