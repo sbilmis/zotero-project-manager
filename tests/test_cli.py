@@ -31,8 +31,8 @@ def test_multi_collection_export(tmp_path: object, zotero_fixture: object) -> No
         ],
     )
     assert result.exit_code == 0, result.output
-    assert (output / "My-AI" / "manifest.json").is_file()
-    assert (output / "Claude" / "manifest.json").is_file()
+    assert (output / "My-AI" / ".zpm" / "manifest.json").is_file()
+    assert (output / "Claude" / ".zpm" / "manifest.json").is_file()
 
 
 def test_export_cli_supports_annotations_and_filename_template(
@@ -74,7 +74,7 @@ def test_status_reports_without_writing(tmp_path: object, zotero_fixture: object
         ["export", "My-AI", "--database", str(fixture.database), "--output", str(output)],  # type: ignore[attr-defined]
     )
     assert export_result.exit_code == 0, export_result.output
-    manifest = output / "My-AI" / "manifest.json"
+    manifest = output / "My-AI" / ".zpm" / "manifest.json"
     before = manifest.read_bytes()
     result = runner.invoke(
         app,
@@ -156,7 +156,7 @@ def test_named_project_sync_uses_saved_settings(tmp_path: object, zotero_fixture
 
     synced = runner.invoke(app, ["--config", str(path), "sync", "ai"])
     assert synced.exit_code == 0, synced.output
-    assert (output / "My-AI" / "manifest.json").is_file()
+    assert (output / "My-AI" / ".zpm" / "manifest.json").is_file()
 
 
 def test_direct_export_uses_configured_defaults(tmp_path: object, zotero_fixture: object) -> None:
@@ -172,4 +172,4 @@ def test_direct_export_uses_configured_defaults(tmp_path: object, zotero_fixture
     )
     result = runner.invoke(app, ["--config", str(path), "export", "My-AI"])
     assert result.exit_code == 0, result.output
-    assert (output / "My-AI" / "manifest.json").is_file()
+    assert (output / "My-AI" / ".zpm" / "manifest.json").is_file()

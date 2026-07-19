@@ -14,6 +14,8 @@ from .annotations import DEFAULT_ANNOTATION_LAYOUT, validate_annotation_layout
 from .filenames import DEFAULT_FILENAME_TEMPLATE, validate_filename_template
 
 MANIFEST_VERSION = 4
+CONTROL_DIRECTORY = ".zpm"
+MANIFEST_FILENAME = "manifest.json"
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,6 +121,22 @@ def load_manifest(path: Path) -> Manifest | None:
         )
     except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
         return None
+
+
+def workspace_manifest_path(workspace: Path) -> Path:
+    """Return the current or legacy manifest path for a workspace."""
+
+    current = workspace / CONTROL_DIRECTORY / MANIFEST_FILENAME
+    if current.exists():
+        return current
+    legacy = workspace / MANIFEST_FILENAME
+    return legacy if legacy.exists() else current
+
+
+def load_workspace_manifest(workspace: Path) -> Manifest | None:
+    """Load a workspace manifest from the current or legacy location."""
+
+    return load_manifest(workspace_manifest_path(workspace))
 
 
 def write_manifest(path: Path, manifest: Manifest) -> None:

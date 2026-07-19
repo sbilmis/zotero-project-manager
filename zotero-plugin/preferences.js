@@ -1,30 +1,31 @@
-/* global ChromeUtils, IOUtils, PathUtils, Zotero, document */
+/* global ChromeUtils, IOUtils, Zotero, document */
 
 const ZPM_PREFERENCES = {
   output: "extensions.zpm.outputDir",
-  executable: "extensions.zpm.executablePath",
   layout: "extensions.zpm.annotationLayout",
+  includeNonPdf: "extensions.zpm.includeNonPdf",
+  filenameTemplate: "extensions.zpm.filenameTemplate",
 };
 
 var ZPMPreferences = {
   initialized: false,
 
   init() {
-    if (this.initialized) {
-      return;
-    }
+    if (this.initialized) return;
     this.initialized = true;
     this.output = document.getElementById("zpm-preferences-output");
-    this.executable = document.getElementById("zpm-preferences-executable");
     this.layout = document.getElementById("zpm-preferences-layout-select");
+    this.includeNonPdf = document.getElementById("zpm-preferences-include-non-pdf");
+    this.filenameTemplate = document.getElementById("zpm-preferences-filename-select");
     this.status = document.getElementById("zpm-preferences-status");
     this.layoutDescription = document.getElementById(
       "zpm-preferences-layout-description",
     );
 
     this.output.value = String(Zotero.Prefs.get(ZPM_PREFERENCES.output) || "");
-    this.executable.value = String(
-      Zotero.Prefs.get(ZPM_PREFERENCES.executable) || "",
+    this.includeNonPdf.checked = Boolean(Zotero.Prefs.get(ZPM_PREFERENCES.includeNonPdf));
+    this.filenameTemplate.value = String(
+      Zotero.Prefs.get(ZPM_PREFERENCES.filenameTemplate) || "author_year_title",
     );
     const savedLayout = String(Zotero.Prefs.get(ZPM_PREFERENCES.layout) || "separate");
     this.layout.value = ["separate", "sidecar", "bundle"].includes(savedLayout)
@@ -32,8 +33,15 @@ var ZPMPreferences = {
       : "separate";
     this.describeLayout();
 
-    this.output.addEventListener("change", () => this.savePath("output"));
-    this.executable.addEventListener("change", () => this.savePath("executable"));
+    this.output.addEventListener("change", () => this.saveOutput());
+    this.includeNonPdf.addEventListener("change", () => {
+      Zotero.Prefs.set(ZPM_PREFERENCES.includeNonPdf, this.includeNonPdf.checked);
+      this.setStatus("Attachment preference saved.", "success");
+    });
+    this.filenameTemplate.addEventListener("change", () => {
+      Zotero.Prefs.set(ZPM_PREFERENCES.filenameTemplate, this.filenameTemplate.value);
+      this.setStatus("Filename preference saved.", "success");
+    });
     this.layout.addEventListener("change", () => {
       Zotero.Prefs.set(ZPM_PREFERENCES.layout, this.layout.value);
       this.describeLayout();
@@ -43,119 +51,26 @@ var ZPMPreferences = {
       "click",
       () => void this.chooseOutput(),
     );
-    document.getElementById("zpm-preferences-executable-button").addEventListener(
-      "click",
-      () => void this.chooseExecutable(),
-    );
-    document.getElementById("zpm-preferences-test-button").addEventListener(
-      "click",
-      () => void this.testExecutable(),
-    );
   },
 
-  savePath(kind) {
-    const field = kind === "output" ? this.output : this.executable;
-    Zotero.Prefs.set(ZPM_PREFERENCES[kind], field.value.trim());
-    this.setStatus(`${kind === "output" ? "Export folder" : "Executable"} saved.`, "success");
+  saveOutput() {
+    Zotero.Prefs.set(ZPM_PREFERENCES.output, this.output.value.trim());
+    this.setStatus("Export folder saved.", "success");
   },
 
   async chooseOutput() {
-    const selected = await this.pickPath(
-      "Choose zpm export folder",
-      "folder",
-      this.output.value,
-    );
-    if (selected) {
-      this.output.value = selected;
-      this.savePath("output");
-    }
-  },
-
-  async chooseExecutable() {
-    const selected = await this.pickPath(
-      "Choose the zpm executable",
-      "file",
-      this.executable.value,
-    );
-    if (selected) {
-      this.executable.value = selected;
-      this.savePath("executable");
-    }
-  },
-
-  async pickPath(title, kind, current) {
     const { FilePicker } = ChromeUtils.importESModule(
       "chrome://zotero/content/modules/filePicker.mjs",
     );
     const picker = new FilePicker();
-    const mode = kind === "folder" ? picker.modeGetFolder : picker.modeOpen;
-    picker.init(Zotero.getMainWindow(), title, mode);
-    if (current && await IOUtils.exists(current)) {
-      picker.displayDirectory = kind === "folder" ? current : PathUtils.parent(current);
+    picker.init(Zotero.getMainWindow(), "Choose zpm export folder", picker.modeGetFolder);
+    if (this.output.value && await IOUtils.exists(this.output.value)) {
+      picker.displayDirectory = this.output.value;
     }
     const result = await picker.show();
-    return result === picker.returnOK ? picker.file : null;
-  },
-
-  async testExecutable() {
-    try {
-      const { Subprocess } = ChromeUtils.importESModule(
-        "resource://gre/modules/Subprocess.sys.mjs",
-      );
-      const command = await this.findExecutable(Subprocess);
-      const process = await Subprocess.call({
-        command,
-        arguments: ["--version"],
-        environmentAppend: true,
-        stderr: "stdout",
-      });
-      const output = (await process.stdout.readString()).trim();
-      const { exitCode } = await process.wait();
-      if (exitCode !== 0) {
-        throw new Error(output || `zpm exited with status ${exitCode}`);
-      }
-      this.setStatus(`${output || "zpm is ready."} (${command})`, "success");
-    } catch (error) {
-      this.setStatus(error.message || String(error), "error");
-    }
-  },
-
-  async findExecutable(Subprocess) {
-    const configured = this.executable.value.trim();
-    if (configured) {
-      if (await IOUtils.exists(configured)) {
-        return configured;
-      }
-      throw new Error("The configured executable does not exist.");
-    }
-
-    const environment = Subprocess.getEnvironment();
-    const home = environment.HOME || environment.USERPROFILE || "";
-    const executableName = Zotero.isWin ? "zpm.exe" : "zpm";
-    const candidates = [];
-    if (Zotero.isMac) {
-      candidates.push("/opt/homebrew/bin/zpm", "/usr/local/bin/zpm");
-    } else if (Zotero.isLinux) {
-      candidates.push(
-        "/home/linuxbrew/.linuxbrew/bin/zpm",
-        "/usr/local/bin/zpm",
-        "/usr/bin/zpm",
-      );
-    }
-    if (home) {
-      candidates.push(PathUtils.join(home, ".local", "bin", executableName));
-    }
-    for (const candidate of candidates) {
-      if (await IOUtils.exists(candidate)) {
-        return candidate;
-      }
-    }
-    try {
-      return await Subprocess.pathSearch(executableName, environment);
-    } catch (_error) {
-      throw new Error(
-        "zpm was not found. Install it with Homebrew or choose a custom executable.",
-      );
+    if (result === picker.returnOK) {
+      this.output.value = picker.file;
+      this.saveOutput();
     }
   },
 

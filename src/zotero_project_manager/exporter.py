@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import shutil
@@ -29,8 +30,18 @@ from .filenames import (
     sanitize_component,
     validate_filename_template,
 )
-from .manifest import Manifest, ManifestEntry, load_manifest, write_manifest
+from .manifest import (
+    CONTROL_DIRECTORY,
+    MANIFEST_FILENAME,
+    Manifest,
+    ManifestEntry,
+    load_manifest,
+    load_workspace_manifest,
+    workspace_manifest_path,
+    write_manifest,
+)
 from .metadata import (
+    INDEX_MARKER,
     MetadataEntry,
     MetadataError,
     validate_metadata_targets,
@@ -108,8 +119,10 @@ class CollectionExporter:
         workspace = workspace.resolve()
         if not is_within(workspace, self.output_root):
             raise ExportError(f"Workspace resolves outside the output directory: {workspace}")
-        manifest_path = workspace / "manifest.json"
-        existing_manifest = load_manifest(manifest_path)
+        loaded_manifest_path = workspace_manifest_path(workspace)
+        manifest_path = workspace / CONTROL_DIRECTORY / MANIFEST_FILENAME
+        control_directory = workspace / CONTROL_DIRECTORY
+        existing_manifest = load_manifest(loaded_manifest_path)
         if workspace.exists() and existing_manifest is None and not self.overwrite:
             raise ExportError(
                 f"Destination exists but is not managed by zpm: {workspace}. "
@@ -134,7 +147,7 @@ class CollectionExporter:
             )
         if self.export_metadata and not self.dry_run:
             try:
-                validate_metadata_targets(workspace)
+                validate_metadata_targets(control_directory)
             except MetadataError as exc:
                 raise ExportError(str(exc)) from exc
 
@@ -151,7 +164,17 @@ class CollectionExporter:
             previous,
             current_identities,
         )
-        assignments = self._assign_destinations(workspace, gathered, previous)
+        legacy_control_files = self._legacy_generated_control_files(
+            workspace,
+            loaded_manifest_path=loaded_manifest_path,
+            metadata_migrated=self.export_metadata,
+        )
+        assignments = self._assign_destinations(
+            workspace,
+            gathered,
+            previous,
+            ignored_existing_files=legacy_control_files,
+        )
         annotation_documents = (
             self._annotation_documents(workspace, gathered, assignments)
             if self.export_annotations
@@ -342,7 +365,7 @@ class CollectionExporter:
             )
             write_manifest(manifest_path, manifest)
             self._write_readme(
-                workspace / "README.md",
+                control_directory / "export-summary.md",
                 manifest,
                 missing=missing,
                 removed=removed - pruned,
@@ -351,7 +374,7 @@ class CollectionExporter:
                 self._remove_empty_managed_directories(workspace, changes)
             if self.export_metadata:
                 try:
-                    write_metadata_files(workspace, manifest, metadata_entries)
+                    write_metadata_files(control_directory, manifest, metadata_entries)
                 except MetadataError as exc:
                     raise ExportError(str(exc)) from exc
             if self.export_annotations:
@@ -359,6 +382,11 @@ class CollectionExporter:
                     write_annotation_documents(workspace, annotation_documents)
                 except AnnotationError as exc:
                     raise ExportError(str(exc)) from exc
+            self._remove_legacy_control_files(
+                workspace,
+                loaded_manifest_path=loaded_manifest_path,
+                metadata_migrated=self.export_metadata,
+            )
 
         return ExportStats(
             collection_name=root.collection.name,
@@ -473,6 +501,8 @@ class CollectionExporter:
         documents: list[AnnotationDocument] = []
         reserved: dict[Path, set[str]] = defaultdict(set)
         for collection, _, attachment in gathered:
+            if not self._is_pdf_attachment(attachment):
+                continue
             identity = (collection.key, attachment.attachment_key)
             pdf_relative = assignments[identity].relative_to(workspace)
             if self.annotation_layout == "separate":
@@ -508,6 +538,17 @@ class CollectionExporter:
                 )
             )
         return documents
+
+    @staticmethod
+    def _is_pdf_attachment(attachment: ZoteroAttachment) -> bool:
+        return (
+            (attachment.content_type or "").casefold() == "application/pdf"
+            or attachment.original_path.casefold().endswith(".pdf")
+            or bool(
+                attachment.source_path
+                and attachment.source_path.suffix.casefold() == ".pdf"
+            )
+        )
 
     def _source_digest(
         self,
@@ -564,7 +605,7 @@ class CollectionExporter:
     def _workspace_for(self, collection: Collection, used: set[Path]) -> Path:
         base_name = sanitize_component(collection.name)
         candidate = self.output_root / base_name
-        existing = load_manifest(candidate / "manifest.json")
+        existing = load_workspace_manifest(candidate)
         if candidate in used or (existing and existing.collection_key != collection.key):
             candidate = self.output_root / f"{base_name} [{collection.key}]"
         if candidate in used:
@@ -590,6 +631,8 @@ class CollectionExporter:
         workspace: Path,
         gathered: list[GatheredAttachment],
         previous: dict[Identity, ManifestEntry],
+        *,
+        ignored_existing_files: set[Path] | None = None,
     ) -> dict[Identity, Path]:
         assignments: dict[Identity, Path] = {}
         reserved: dict[Path, set[str]] = defaultdict(set)
@@ -621,7 +664,11 @@ class CollectionExporter:
 
         if workspace.exists() and not self.overwrite:
             for path in workspace.rglob("*"):
-                if path.is_file() and path.name not in {"manifest.json", "README.md"}:
+                if CONTROL_DIRECTORY in path.relative_to(workspace).parts:
+                    continue
+                if ignored_existing_files and path.resolve() in ignored_existing_files:
+                    continue
+                if path.is_file():
                     reserved[path.parent.resolve()].add(path.name.casefold())
                 if self.annotation_layout == "bundle" and path.is_dir():
                     reserved_bundles[path.parent.resolve()].add(path.name.casefold())
@@ -723,3 +770,80 @@ class CollectionExporter:
             f"Removed attachments retained: {removed}\n"
         )
         path.write_text(content, encoding="utf-8")
+
+    @staticmethod
+    def _legacy_generated_control_files(
+        workspace: Path,
+        *,
+        loaded_manifest_path: Path,
+        metadata_migrated: bool,
+    ) -> set[Path]:
+        """Return generated root files that will be removed after migration."""
+
+        generated: set[Path] = set()
+        legacy_manifest = workspace / MANIFEST_FILENAME
+        if loaded_manifest_path == legacy_manifest:
+            generated.add(legacy_manifest.resolve())
+        legacy_summary = workspace / "README.md"
+        try:
+            if legacy_summary.read_text(encoding="utf-8").startswith(
+                "# Project exported from Zotero\n"
+            ):
+                generated.add(legacy_summary.resolve())
+        except (OSError, UnicodeError):
+            pass
+        if not metadata_migrated:
+            return generated
+        legacy_metadata = workspace / "metadata.json"
+        try:
+            payload = json.loads(legacy_metadata.read_text(encoding="utf-8"))
+            if isinstance(payload, dict) and payload.get("generated_by") == "zpm":
+                generated.add(legacy_metadata.resolve())
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            pass
+        legacy_index = workspace / "INDEX.md"
+        try:
+            if legacy_index.read_text(encoding="utf-8").splitlines()[0] == INDEX_MARKER:
+                generated.add(legacy_index.resolve())
+        except (OSError, UnicodeError, IndexError):
+            pass
+        return generated
+
+    @staticmethod
+    def _remove_legacy_control_files(
+        workspace: Path,
+        *,
+        loaded_manifest_path: Path,
+        metadata_migrated: bool,
+    ) -> None:
+        """Remove generated root-level control files after a successful migration."""
+
+        legacy_manifest = workspace / MANIFEST_FILENAME
+        current_manifest = workspace / CONTROL_DIRECTORY / MANIFEST_FILENAME
+        if loaded_manifest_path == legacy_manifest and current_manifest.is_file():
+            legacy_manifest.unlink(missing_ok=True)
+
+        legacy_summary = workspace / "README.md"
+        try:
+            if legacy_summary.read_text(encoding="utf-8").startswith(
+                "# Project exported from Zotero\n"
+            ):
+                legacy_summary.unlink()
+        except (OSError, UnicodeError):
+            pass
+
+        if not metadata_migrated:
+            return
+        legacy_metadata = workspace / "metadata.json"
+        try:
+            payload = json.loads(legacy_metadata.read_text(encoding="utf-8"))
+            if isinstance(payload, dict) and payload.get("generated_by") == "zpm":
+                legacy_metadata.unlink()
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            pass
+        legacy_index = workspace / "INDEX.md"
+        try:
+            if legacy_index.read_text(encoding="utf-8").splitlines()[0] == INDEX_MARKER:
+                legacy_index.unlink()
+        except (OSError, UnicodeError, IndexError):
+            pass
