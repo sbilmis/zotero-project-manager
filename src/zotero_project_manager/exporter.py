@@ -30,6 +30,18 @@ from .filenames import (
     sanitize_component,
     validate_filename_template,
 )
+from .gemini_notebook import (
+    NOTEBOOKLM_DEFAULT_SOURCE_LIMIT,
+    NOTEBOOKLM_OVERVIEW_FILENAME,
+    NOTEBOOKLM_PROFILE,
+    NOTEBOOKLM_WORKSPACE_SUFFIX,
+    NotebookProfileError,
+    is_notebooklm_supported,
+    notebooklm_source_count,
+    validate_export_profile,
+    validate_notebooklm_overview,
+    write_notebooklm_overview,
+)
 from .manifest import (
     CONTROL_DIRECTORY,
     MANIFEST_FILENAME,
@@ -78,18 +90,26 @@ class CollectionExporter:
         export_annotations: bool = False,
         annotation_layout: str = DEFAULT_ANNOTATION_LAYOUT,
         filename_template: str = DEFAULT_FILENAME_TEMPLATE,
+        export_profile: str = "standard",
     ) -> None:
         self.database = database
         self.output_root = output_root.expanduser().resolve()
+        try:
+            self.export_profile = validate_export_profile(export_profile)
+        except NotebookProfileError as exc:
+            raise ExportError(str(exc)) from exc
+        self.notebooklm = self.export_profile == NOTEBOOKLM_PROFILE
         self.recursive = recursive
-        self.include_non_pdf = include_non_pdf
+        self.include_non_pdf = include_non_pdf or self.notebooklm
         self.overwrite = overwrite
         self.dry_run = dry_run
         self.prune = prune
         self.verify_hashes = verify_hashes
         self.export_metadata = export_metadata
-        self.export_annotations = export_annotations
-        self.annotation_layout = validate_annotation_layout(annotation_layout)
+        self.export_annotations = export_annotations or self.notebooklm
+        self.annotation_layout = validate_annotation_layout(
+            "sidecar" if self.notebooklm else annotation_layout
+        )
         self.filename_template = validate_filename_template(filename_template)
         self._digest_cache: dict[tuple[Path, int, int], str] = {}
         if is_within(self.output_root, database.data_dir):
@@ -149,6 +169,11 @@ class CollectionExporter:
             try:
                 validate_metadata_targets(control_directory)
             except MetadataError as exc:
+                raise ExportError(str(exc)) from exc
+        if self.notebooklm:
+            try:
+                validate_notebooklm_overview(workspace)
+            except NotebookProfileError as exc:
                 raise ExportError(str(exc)) from exc
 
         gathered = self._gather(root)
@@ -382,12 +407,29 @@ class CollectionExporter:
                     write_annotation_documents(workspace, annotation_documents)
                 except AnnotationError as exc:
                     raise ExportError(str(exc)) from exc
+            if self.notebooklm:
+                try:
+                    write_notebooklm_overview(
+                        workspace,
+                        collection_name=manifest.collection_name,
+                        collection_key=manifest.collection_key,
+                        exported_at=manifest.exported_at,
+                        entries=metadata_entries,
+                        annotation_documents=annotation_documents,
+                    )
+                except NotebookProfileError as exc:
+                    raise ExportError(str(exc)) from exc
             self._remove_legacy_control_files(
                 workspace,
                 loaded_manifest_path=loaded_manifest_path,
                 metadata_migrated=self.export_metadata,
             )
 
+        notebooklm_sources = (
+            notebooklm_source_count(metadata_entries, annotation_documents)
+            if self.notebooklm
+            else 0
+        )
         return ExportStats(
             collection_name=root.collection.name,
             workspace=workspace,
@@ -405,6 +447,10 @@ class CollectionExporter:
                 document.annotation_count for document in annotation_documents
             ),
             notes=sum(document.note_count for document in annotation_documents),
+            notebooklm_sources=notebooklm_sources,
+            notebooklm_source_limit_exceeded=(
+                notebooklm_sources > NOTEBOOKLM_DEFAULT_SOURCE_LIMIT
+            ),
             changes=tuple(changes),
         )
 
@@ -420,6 +466,13 @@ class CollectionExporter:
                 collection_id,
                 include_non_pdf=self.include_non_pdf,
             )
+            if self.notebooklm:
+                attachments = tuple(
+                    item
+                    for item in attachments
+                    if is_notebooklm_supported(item.source_path, item.original_path)
+                )
+                relative_path = Path()
             gathered.extend((collection, relative_path, item) for item in attachments)
         return gathered
 
@@ -535,6 +588,7 @@ class CollectionExporter:
                     notes,
                     pdf_relative_path=pdf_relative,
                     annotation_relative_path=annotation_relative,
+                    include_images=not self.notebooklm,
                 )
             )
         return documents
@@ -603,7 +657,8 @@ class CollectionExporter:
         return self._digest_cache[key]
 
     def _workspace_for(self, collection: Collection, used: set[Path]) -> Path:
-        base_name = sanitize_component(collection.name)
+        suffix = NOTEBOOKLM_WORKSPACE_SUFFIX if self.notebooklm else ""
+        base_name = sanitize_component(f"{collection.name}{suffix}")
         candidate = self.output_root / base_name
         existing = load_workspace_manifest(candidate)
         if candidate in used or (existing and existing.collection_key != collection.key):
@@ -637,6 +692,8 @@ class CollectionExporter:
         assignments: dict[Identity, Path] = {}
         reserved: dict[Path, set[str]] = defaultdict(set)
         reserved_bundles: dict[Path, set[str]] = defaultdict(set)
+        if self.notebooklm:
+            reserved[workspace.resolve()].add(NOTEBOOKLM_OVERVIEW_FILENAME.casefold())
 
         for collection, relative_dir, attachment in gathered:
             identity = (collection.key, attachment.attachment_key)

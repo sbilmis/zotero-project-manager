@@ -225,6 +225,65 @@ test("native export copies PDFs and Markdown while isolating control files", asy
   assert.equal(second.copied, 0);
 });
 
+test("Gemini Notebook export flattens and filters prepared sources", async (context) => {
+  const value = await fixture();
+  context.after(() => fs.rm(value.root, { recursive: true, force: true }));
+  const unsupported = path.join(path.dirname(value.pdf), "private.json");
+  await fs.writeFile(unsupported, '{"private": true}\n');
+  const data = snapshot(value.pdf, value.markdown);
+  data.attachments["2"] = [data.attachments["1"].pop()];
+  data.attachments["1"].push({
+    attachment_id: 12,
+    attachment_key: "PRIVATE1",
+    item_id: 102,
+    item_key: "ITEM0003",
+    title: "Private data",
+    date: null,
+    creators: [],
+    content_type: "application/json",
+    source_path: unsupported,
+    original_path: "storage:private.json",
+    doi: null,
+    tags: [],
+  });
+
+  const fileSystem = new NodeFileSystem();
+  const first = await exportSnapshot(data, fileSystem, "ROOTKEY1", {
+    outputDir: value.output,
+    notebooklm: true,
+    annotationLayout: "bundle",
+  });
+  const workspace = path.join(value.output, "My Project - NotebookLM");
+  assert.equal(await fs.readFile(path.join(workspace, "README.md"), "utf8"), "# Personal project\n");
+  assert.equal(await fs.readFile(
+    path.join(workspace, "Vaswani - 2017 - Attention Is All You Need.pdf"),
+    "utf8",
+  ), "pdf-content");
+  assert.match(
+    await fs.readFile(
+      path.join(workspace, "Vaswani - 2017 - Attention Is All You Need.annotations.md"),
+      "utf8",
+    ),
+    /Important result[\s\S]*Compare models/,
+  );
+  await assert.rejects(fs.access(path.join(workspace, "References")));
+  await assert.rejects(fs.access(path.join(workspace, "private.json")));
+  const overview = await fs.readFile(path.join(workspace, "collection-overview.md"), "utf8");
+  assert.match(overview, /Prepared source files: 4/);
+  assert.equal(first.copied, 2);
+  assert.equal(first.notebooklmSources, 4);
+  assert.equal(first.notebooklmSourceLimitExceeded, false);
+
+  await fs.writeFile(path.join(workspace, "collection-overview.md"), "# Personal overview\n");
+  await assert.rejects(
+    exportSnapshot(data, fileSystem, "ROOTKEY1", {
+      outputDir: value.output,
+      notebooklm: true,
+    }),
+    /unmanaged Gemini Notebook overview/,
+  );
+});
+
 test("legacy root control files migrate without deleting personal README files", async (context) => {
   const value = await fixture();
   context.after(() => fs.rm(value.root, { recursive: true, force: true }));

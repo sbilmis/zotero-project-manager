@@ -199,14 +199,21 @@ var ZPMPlugin = {
               menuType: "menuitem",
               l10nID: "zpm-menu-export-pdfs",
               onCommand(_event, context) {
-                void plugin.exportSelected(context, false);
+                void plugin.exportSelected(context, false, false);
               },
             },
             {
               menuType: "menuitem",
               l10nID: "zpm-menu-export-annotations",
               onCommand(_event, context) {
-                void plugin.exportSelected(context, true);
+                void plugin.exportSelected(context, true, false);
+              },
+            },
+            {
+              menuType: "menuitem",
+              l10nID: "zpm-menu-export-notebooklm",
+              onCommand(_event, context) {
+                void plugin.exportSelected(context, true, true);
               },
             },
             { menuType: "separator" },
@@ -243,7 +250,7 @@ var ZPMPlugin = {
     Zotero.debug("zpm companion plugin stopped");
   },
 
-  async exportSelected(context, annotations) {
+  async exportSelected(context, annotations, notebooklm) {
     try {
       const row = context.collectionTreeRow;
       if (!row?.isCollection() || !row.ref?.key) {
@@ -253,7 +260,7 @@ var ZPMPlugin = {
       if (!outputDir) {
         return;
       }
-      const annotationLayout = this.annotationLayout();
+      const annotationLayout = notebooklm ? "sidecar" : this.annotationLayout();
       const snapshot = await this.buildSnapshot(row.ref, annotations);
       const stats = await ZPMNativeExporter.exportSnapshot(
         snapshot,
@@ -262,19 +269,27 @@ var ZPMPlugin = {
         {
           outputDir,
           exportAnnotations: annotations,
-          includeNonPdf: Boolean(Zotero.Prefs.get(ZPM_PREF_INCLUDE_NON_PDF)),
+          includeNonPdf: notebooklm
+            || Boolean(Zotero.Prefs.get(ZPM_PREF_INCLUDE_NON_PDF)),
           annotationLayout,
+          notebooklm,
           filenameTemplate: String(
             Zotero.Prefs.get(ZPM_PREF_FILENAME_TEMPLATE) || "author_year_title",
           ),
         },
       );
       this.alert(
-        "Export complete",
+        notebooklm ? "Gemini Notebook export complete" : "Export complete",
         `${stats.collectionName}: ${stats.copied} copied, ${stats.updated} updated, `
           + `${stats.unchanged} unchanged, ${stats.missing} missing.\n\n${stats.workspace}`
           + (stats.retainedSettings.length
             ? `\n\nExisting workspace settings retained (${stats.retainedSettings.join(", ")}).`
+            : "")
+          + (stats.notebooklmSources
+            ? `\n\nPrepared sources: ${stats.notebooklmSources}.`
+            : "")
+          + (stats.notebooklmSourceLimitExceeded
+            ? "\nThis exceeds 50 sources; select a subset if required by your plan."
             : ""),
       );
     } catch (error) {

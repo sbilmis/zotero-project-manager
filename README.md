@@ -38,6 +38,7 @@ Right-click a collection to use:
 Export with zpm
     Export Collection
     Export Collection + Annotations
+    Prepare for Gemini Notebook (NotebookLM)
     Settings…
 ```
 
@@ -51,6 +52,35 @@ Settings control:
 The first export asks for a destination if no valid default exists. Zotero can install
 future releases automatically when **Update Add-ons Automatically** is enabled in the
 Plugins gear menu; **Check for Updates** provides a manual check.
+
+## Gemini Notebook-ready exports
+
+Use the `notebooklm` profile to prepare a collection for Gemini Notebook without
+unofficial authentication or browser automation:
+
+```bash
+zpm export "My-AI" --output ~/GoogleDrive/Zotero --profile notebooklm
+```
+
+The plugin's **Prepare for Gemini Notebook (NotebookLM)** action produces the same
+layout. Each collection gets a separate `My-AI - NotebookLM/` workspace containing:
+
+- a flat set of supported document, image, and audio attachments;
+- one sidecar Markdown annotation file per PDF;
+- a generated `collection-overview.md` source guide;
+- hidden `.zpm/` bookkeeping that should not be imported.
+
+Choose a Google Drive-synced output directory, then select the prepared files through
+**Gemini Notebook → Add sources → Google Drive**. Newly added files still need to be
+selected in Gemini Notebook. zpm warns when the folder contains more than 50 prepared
+sources so you can select a subset when required by your plan.
+
+Save the profile for repeatable CLI synchronization with:
+
+```bash
+zpm project add ai-notebook "My-AI" --profile notebooklm --output ~/GoogleDrive/Zotero
+zpm sync ai-notebook
+```
 
 ## Python CLI
 

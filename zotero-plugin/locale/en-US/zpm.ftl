@@ -7,5 +7,8 @@ zpm-menu-export-pdfs =
 zpm-menu-export-annotations =
     .label = Export Collection + Annotations
 
+zpm-menu-export-notebooklm =
+    .label = Prepare for Gemini Notebook (NotebookLM)
+
 zpm-menu-settings =
     .label = Settings…

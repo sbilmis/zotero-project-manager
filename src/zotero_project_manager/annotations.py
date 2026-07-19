@@ -116,6 +116,7 @@ def render_annotation_document(
     *,
     pdf_relative_path: Path,
     annotation_relative_path: Path,
+    include_images: bool = True,
 ) -> AnnotationDocument:
     """Render annotations and child notes for one exported attachment."""
 
@@ -171,7 +172,7 @@ def render_annotation_document(
             lines.extend(["", *_blockquote(annotation.text)])
         if annotation.comment:
             lines.extend(["", "**Comment**", "", annotation.comment.strip()])
-        if annotation.image_path:
+        if annotation.image_path and include_images:
             image_name = _annotation_image_name(annotation)
             image_relative_path = (
                 annotation_relative_path.parent / asset_directory_name / image_name
@@ -185,7 +186,7 @@ def render_annotation_document(
             image_link = Path(asset_directory_name, image_name).as_posix()
             image_alt = f"{location} {annotation.annotation_type} annotation"
             lines.extend(["", f"![{image_alt}]({quote(image_link, safe='/')})"])
-        elif annotation.annotation_type in {"image", "ink"}:
+        elif annotation.annotation_type in {"image", "ink"} and include_images:
             lines.extend(
                 ["", "_Image preview is unavailable in Zotero's local cache._"]
             )

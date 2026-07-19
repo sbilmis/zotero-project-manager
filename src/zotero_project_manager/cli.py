@@ -22,6 +22,7 @@ from .config import AppConfig, ConfigError, load_config, make_project, save_conf
 from .diagnostics import run_diagnostics
 from .exporter import CollectionExporter, ExportError
 from .filenames import FILENAME_TEMPLATES, validate_filename_template
+from .gemini_notebook import EXPORT_PROFILES, validate_export_profile
 from .models import ExportStats
 from .utils import configure_logging
 from .zotero import ZoteroDatabase, ZoteroDatabaseError, default_zotero_data_dir
@@ -108,6 +109,13 @@ def _annotation_layout(explicit: str | None, config: AppConfig) -> str:
         raise ConfigError(str(exc)) from exc
 
 
+def _export_profile(explicit: str) -> str:
+    try:
+        return validate_export_profile(explicit)
+    except ValueError as exc:
+        raise ConfigError(str(exc)) from exc
+
+
 def _print_stats(stats: list[ExportStats], *, show_changes: bool = False) -> None:
     for result in stats:
         if show_changes:
@@ -128,6 +136,15 @@ def _print_stats(stats: list[ExportStats], *, show_changes: bool = False) -> Non
             f"{annotation_summary} "
             f"-> {result.workspace}"
         )
+        if result.notebooklm_sources:
+            typer.echo(
+                f"  Gemini Notebook-ready sources: {result.notebooklm_sources}"
+            )
+        if result.notebooklm_source_limit_exceeded:
+            typer.echo(
+                "  Warning: more than 50 prepared sources; select a subset if this "
+                "exceeds your plan's current limit."
+            )
 
 
 @app.command("list")
@@ -178,6 +195,16 @@ def export(
         Path | None,
         typer.Option("--output", "-o", help="Parent directory for exported workspaces."),
     ] = None,
+    profile: Annotated[
+        str,
+        typer.Option(
+            "--profile",
+            help=(
+                "Workspace profile: " + ", ".join(EXPORT_PROFILES)
+                + "; notebooklm flattens supported sources and adds annotation sidecars."
+            ),
+        ),
+    ] = "standard",
     recursive: Annotated[
         bool,
         typer.Option("--recursive/--no-recursive", help="Include descendant collections."),
@@ -292,6 +319,7 @@ def export(
                 export_annotations=annotations,
                 annotation_layout=_annotation_layout(annotation_layout, config),
                 filename_template=_filename_template(filename_template, config),
+                export_profile=_export_profile(profile),
             )
             stats = exporter.export_many(selected, forest)
     except (ZoteroDatabaseError, CollectionError, ConfigError, ExportError, OSError) as exc:
@@ -315,6 +343,10 @@ def plugin_export(
         Path,
         typer.Option("--output", "-o", help="Parent directory for the exported workspace."),
     ],
+    profile: Annotated[
+        str,
+        typer.Option("--profile", help="Workspace export profile."),
+    ] = "standard",
     recursive: Annotated[
         bool,
         typer.Option("--recursive/--no-recursive", help="Include descendant collections."),
@@ -357,6 +389,7 @@ def plugin_export(
             export_annotations=annotations,
             annotation_layout=_annotation_layout(annotation_layout, config),
             filename_template=_filename_template(filename_template, config),
+            export_profile=_export_profile(profile),
         ).export_many([selected], forest)
     except (BridgeError, CollectionError, ConfigError, ExportError, OSError) as exc:
         typer.echo(f"Error: {exc}", err=True)
@@ -376,6 +409,10 @@ def status(
         Path | None,
         typer.Option("--output", "-o", help="Parent directory containing exported workspaces."),
     ] = None,
+    profile: Annotated[
+        str,
+        typer.Option("--profile", help="Workspace export profile."),
+    ] = "standard",
     recursive: Annotated[
         bool,
         typer.Option("--recursive/--no-recursive", help="Include descendant collections."),
@@ -452,6 +489,7 @@ def status(
                 export_annotations=annotations,
                 annotation_layout=_annotation_layout(annotation_layout, config),
                 filename_template=_filename_template(filename_template, config),
+                export_profile=_export_profile(profile),
             ).export_many(selected, forest)
     except (ZoteroDatabaseError, CollectionError, ConfigError, ExportError, OSError) as exc:
         typer.echo(f"Error: {exc}", err=True)
@@ -518,6 +556,10 @@ def add_project(
         Path | None,
         typer.Option("--output", "-o", help="Override the global output directory."),
     ] = None,
+    profile: Annotated[
+        str,
+        typer.Option("--profile", help="Workspace export profile."),
+    ] = "standard",
     recursive: Annotated[
         bool, typer.Option("--recursive/--no-recursive", help="Include descendants.")
     ] = True,
@@ -572,6 +614,7 @@ def add_project(
             annotations=annotations,
             annotation_layout=_annotation_layout(annotation_layout, config),
             filename_template=_filename_template(filename_template, config),
+            export_profile=_export_profile(profile),
         )
         updated = config.with_project(project)
         save_config(updated)
@@ -697,6 +740,7 @@ def show_project(
     typer.echo(f"Annotations: {project.annotations}")
     typer.echo(f"Annotation layout: {project.annotation_layout}")
     typer.echo(f"Filename template: {project.filename_template}")
+    typer.echo(f"Export profile: {project.export_profile}")
 
 
 @app.command()
@@ -740,6 +784,7 @@ def sync(
                 export_annotations=project.annotations,
                 annotation_layout=project.annotation_layout,
                 filename_template=project.filename_template,
+                export_profile=project.export_profile,
             ).export_many(selected, forest)
     except (ZoteroDatabaseError, CollectionError, ExportError, OSError) as exc:
         typer.echo(f"Error: {exc}", err=True)

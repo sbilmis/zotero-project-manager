@@ -2,6 +2,16 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## Unreleased
+
+- Add a `notebooklm` export profile to the Python CLI and named projects.
+- Add **Prepare for Gemini Notebook (NotebookLM)** to the native Zotero plugin.
+- Create separate flattened `Collection - NotebookLM/` workspaces containing only
+  supported source types, sidecar annotation Markdown, and a managed source overview.
+- Warn when more than 50 prepared sources may exceed the current default plan limit.
+- Keep uploads manual through Google Drive and avoid unofficial NotebookLM APIs,
+  browser sessions, stored Google credentials, and background synchronization.
+
 ## 1.0.0 — 2026-07-19
 
 - Make Zotero plugin 1.0.0 completely self-contained: exports now run through a

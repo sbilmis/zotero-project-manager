@@ -7,6 +7,9 @@ import pytest
 
 from zotero_project_manager.collections import build_collection_forest, resolve_collection
 from zotero_project_manager.exporter import CollectionExporter, ExportError
+from zotero_project_manager.gemini_notebook import (
+    NOTEBOOKLM_OVERVIEW_MARKER,
+)
 from zotero_project_manager.manifest import load_manifest
 from zotero_project_manager.zotero import ZoteroDatabase
 
@@ -106,6 +109,75 @@ def test_non_pdf_readme_exports_without_control_file_collision(
     assert (workspace / ".zpm" / "manifest.json").is_file()
     index = (workspace / ".zpm" / "INDEX.md").read_text(encoding="utf-8")
     assert "[MD](../README.md)" in index
+
+
+def test_notebooklm_profile_flattens_and_filters_supported_sources(
+    tmp_path: Path, zotero_fixture: object
+) -> None:
+    fixture = zotero_fixture
+    _add_standalone_attachment(
+        fixture,
+        item_id=300,
+        key="README01",
+        collection_id=2,
+        filename="README.md",
+        content_type="text/markdown",
+        title="README",
+        content=b"# Project context\n",
+    )
+    _add_standalone_attachment(
+        fixture,
+        item_id=301,
+        key="DATA0001",
+        collection_id=1,
+        filename="private.json",
+        content_type="application/json",
+        title="Private data",
+        content=b'{"do_not_import": true}\n',
+    )
+
+    output = tmp_path / "exports"
+    with ZoteroDatabase(fixture.data_dir, database_path=fixture.database) as database:  # type: ignore[attr-defined]
+        records = database.list_collections()
+        exporter = CollectionExporter(database, output, export_profile="notebooklm")
+        first = exporter.export_many(
+            [resolve_collection(records, "My-AI")], build_collection_forest(records)
+        )[0]
+        second = exporter.export_many(
+            [resolve_collection(records, "My-AI")], build_collection_forest(records)
+        )[0]
+
+    workspace = output / "My-AI - NotebookLM"
+    assert not (output / "My-AI").exists()
+    assert not (workspace / "Books").exists()
+    assert (workspace / "README.md").read_text(encoding="utf-8") == "# Project context\n"
+    assert not (workspace / "private.json").exists()
+    assert (workspace / "Chollet - 2021 - Deep Learning with Python.pdf").is_file()
+    assert (workspace / "Chollet - 2021 - Deep Learning with Python.annotations.md").is_file()
+    overview = (workspace / "collection-overview.md").read_text(encoding="utf-8")
+    assert overview.startswith(NOTEBOOKLM_OVERVIEW_MARKER)
+    assert "Prepared source files: 6" in overview
+    assert first.copied == 3
+    assert first.notebooklm_sources == 6
+    assert first.notebooklm_source_limit_exceeded is False
+    assert second.unchanged == 3
+
+
+def test_notebooklm_profile_refuses_unmanaged_overview(
+    tmp_path: Path, zotero_fixture: object
+) -> None:
+    fixture = zotero_fixture
+    output = tmp_path / "exports"
+    with ZoteroDatabase(fixture.data_dir, database_path=fixture.database) as database:  # type: ignore[attr-defined]
+        records = database.list_collections()
+        exporter = CollectionExporter(database, output, export_profile="notebooklm")
+        selected = resolve_collection(records, "My-AI")
+        forest = build_collection_forest(records)
+        exporter.export_many([selected], forest)
+        overview = output / "My-AI - NotebookLM" / "collection-overview.md"
+        overview.write_text("# Personal overview\n", encoding="utf-8")
+        with pytest.raises(ExportError, match="unmanaged Gemini Notebook overview"):
+            exporter.export_many([selected], forest)
 
 
 def test_legacy_root_control_files_migrate_to_dot_zpm(
@@ -591,6 +663,39 @@ def test_readded_attachment_does_not_reconcile_with_modified_stale_export(
     assert stats.reconciled == 0
     assert stale.read_bytes() == b"user-modified-stale-file"
     assert len(list((output / "My-AI").glob("*.pdf"))) == 2
+
+
+def _add_standalone_attachment(
+    fixture: object,
+    *,
+    item_id: int,
+    key: str,
+    collection_id: int,
+    filename: str,
+    content_type: str,
+    title: str,
+    content: bytes,
+) -> None:
+    source = fixture.data_dir / "storage" / key / filename  # type: ignore[attr-defined]
+    source.parent.mkdir(parents=True)
+    source.write_bytes(content)
+    connection = sqlite3.connect(fixture.database)  # type: ignore[attr-defined]
+    connection.execute("INSERT INTO items (itemID, key) VALUES (?, ?)", (item_id, key))
+    connection.execute(
+        "INSERT INTO collectionItems VALUES (?, ?)", (collection_id, item_id)
+    )
+    connection.execute(
+        "INSERT INTO itemAttachments VALUES (?, ?, ?, ?)",
+        (item_id, None, content_type, f"storage:{filename}"),
+    )
+    connection.execute(
+        "INSERT INTO itemDataValues VALUES (?, ?)", (item_id, title)
+    )
+    connection.execute(
+        "INSERT INTO itemData VALUES (?, ?, ?)", (item_id, 1, item_id)
+    )
+    connection.commit()
+    connection.close()
 
 
 def _initial_export(output: Path, fixture: object) -> None:

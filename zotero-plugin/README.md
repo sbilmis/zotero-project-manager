@@ -21,6 +21,18 @@ Open **Settings…** from a collection's **Export with zpm** menu, or open Zoter
 The first export prompts for a destination if no valid default exists. Later exports
 update the collection's existing workspace without asking again.
 
+## Gemini Notebook preparation
+
+Choose **Prepare for Gemini Notebook (NotebookLM)** from a collection's zpm menu to
+create a separate `Collection - NotebookLM/` workspace. The plugin flattens supported
+attachments, generates sidecar Markdown for PDF annotations and notes, and writes a
+`collection-overview.md` guide. Unsupported data files and `.zpm/` control artifacts
+are excluded from the prepared source count.
+
+For the simplest workflow, make the default output parent a Google Drive-synced
+folder. In Gemini Notebook, use **Add sources → Google Drive** and select the prepared
+files. This action does not sign in to Google or upload through an unofficial API.
+
 Generated manifests, metadata, indexes, and summaries live under `.zpm/`, leaving
 normal workspace names available for files attached in Zotero. Existing root-level
 manifest v1–v4 workspaces migrate automatically after a successful export.
