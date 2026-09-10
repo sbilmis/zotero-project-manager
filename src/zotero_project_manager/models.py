@@ -98,6 +98,7 @@ class ExportStats:
     notes: int = 0
     notebooklm_sources: int = 0
     notebooklm_source_limit_exceeded: bool = False
+    delivery_files: tuple[str, ...] = ()
     changes: tuple["SyncChange", ...] = ()
 
 

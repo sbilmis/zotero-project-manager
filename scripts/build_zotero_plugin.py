@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import zipfile
@@ -20,6 +21,7 @@ FILES = (
     "preferences.js",
     "preferences.css",
     "native-exporter.js",
+    "destinations.js",
     "zpm.js",
     "locale/en-US/zpm.ftl",
 )
@@ -46,7 +48,7 @@ def verify_update_feed(target: Path, version: str) -> None:
         )
 
 
-def build() -> Path:
+def build(*, development: bool = False) -> Path:
     """Build the XPI and return its path."""
 
     manifest = json.loads((PLUGIN / "manifest.json").read_text(encoding="utf-8"))
@@ -60,9 +62,17 @@ def build() -> Path:
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o644 << 16
             archive.writestr(info, source.read_bytes())
-    verify_update_feed(target, version)
+        for source in sorted((ROOT / "src/zotero_project_manager/resources").glob("*.applescript")):
+            info = zipfile.ZipInfo(f"scripts/{source.name}", date_time=(2026, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            archive.writestr(info, source.read_bytes())
+    if not development:
+        verify_update_feed(target, version)
     return target
 
 
 if __name__ == "__main__":
-    print(build())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--development", action="store_true", help="Build a local preview without requiring a published update-feed entry.")
+    print(build(development=parser.parse_args().development))

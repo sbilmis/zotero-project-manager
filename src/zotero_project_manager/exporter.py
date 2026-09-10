@@ -451,6 +451,15 @@ class CollectionExporter:
             notebooklm_source_limit_exceeded=(
                 notebooklm_sources > NOTEBOOKLM_DEFAULT_SOURCE_LIMIT
             ),
+            delivery_files=tuple(dict.fromkeys(
+                [entry.destination_path for entry in entries if entry.state == "active"]
+                + [document.relative_path.as_posix() for document in annotation_documents]
+                + [
+                    image.relative_path.as_posix()
+                    for document in annotation_documents for image in document.images
+                ]
+                + ([NOTEBOOKLM_OVERVIEW_FILENAME] if self.notebooklm else [])
+            )),
             changes=tuple(changes),
         )
 

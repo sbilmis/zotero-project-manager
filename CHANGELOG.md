@@ -2,14 +2,46 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
-## Unreleased
+## 1.1.0.dev3 — local preview
+
+- Remember a Gemini Notebook URL per Zotero library/collection key, surviving
+  restarts and renames without confusing same-named collections.
+- Add **Set Gemini Notebook Link…** to save, replace, or forget a link, and
+  offer link setup on the first Send.
+- Validate direct Google notebook URLs, retain account selectors, and preserve
+  existing links when edits are cancelled or invalid.
+- Keep notebook creation and uploads manual, with DT4 handoffs independent.
+- Add link/routing regression tests and an Agentic_AI installation/test guide.
+- Run CI on codex branches as well as main and pull requests.
+
+## 1.1.0.dev2 — local preview
+
+- Target DEVONthink 4 explicitly, with a version check and no fallback to DT3.
+- Label the menu **Send to DEVONthink 4…** and verify the live handoff against DT4.
+
+## 1.1.0.dev1 — local preview
+
+- Add independent **Send to Gemini Notebook…** and **Send to DEVONthink…**
+  collection-menu actions and CLI `export --to` destinations.
+- Open prepared Notebook sources in the browser and select their exact files in
+  Finder for manual upload; support an existing notebook URL from the CLI.
+- Index exported files in a user-selected DEVONthink database/group, preserve the
+  collection hierarchy, refresh existing indexed records, and avoid duplicate paths.
+- Hand off only files produced by the current export, including requested notes,
+  with path-boundary checks and no Zotero database or attachment writes.
+- Add `--prepare-only`, destination-aware dry runs, shared macOS scripts, and
+  opt-in live app tests with synthetic documents.
+- Build local XPI previews with `--development`; published release builds still
+  require matching update-feed hashes.
+
+### Previously prepared Notebook profile
 
 - Add a `notebooklm` export profile to the Python CLI and named projects.
 - Add **Prepare for Gemini Notebook (NotebookLM)** to the native Zotero plugin.
 - Create separate flattened `Collection - NotebookLM/` workspaces containing only
   supported source types, sidecar annotation Markdown, and a managed source overview.
 - Warn when more than 50 prepared sources may exceed the current default plan limit.
-- Keep uploads manual through Google Drive and avoid unofficial NotebookLM APIs,
+- Keep uploads manual and avoid unofficial NotebookLM APIs,
   browser sessions, stored Google credentials, and background synchronization.
 
 ## 1.0.0 — 2026-07-19

@@ -720,7 +720,7 @@ var ZPMNativeExporter = (() => {
         `- Exported: ${manifest.exported_at}`,
         `- Prepared source files: ${sourceCount}`,
         "",
-        "Select the files you want from this folder in **Add sources → Google Drive**. The `.zpm` directory contains zpm bookkeeping and should not be imported.",
+        "Use **Add sources → Upload files**, or drag the prepared files into the notebook. Google Drive is optional when this folder is Drive-synced. The `.zpm` directory contains zpm bookkeeping and should not be imported.",
         "",
       ];
       if (sourceCount > NOTEBOOKLM_DEFAULT_SOURCE_LIMIT) {
@@ -1003,6 +1003,14 @@ var ZPMNativeExporter = (() => {
         );
       }
       await this.removeLegacyControlFiles(workspace, loaded, this.exportMetadata);
+      stats.deliveryFiles = Array.from(new Set([
+        ...entries.filter((entry) => entry.state === "active")
+          .map((entry) => entry.destination_path),
+        ...annotationStats.documents.map((document) => document.relativePath),
+        ...annotationStats.documents.flatMap((document) => document.images)
+          .map((image) => image.relativePath),
+        ...(this.notebooklm ? [NOTEBOOKLM_OVERVIEW_FILENAME] : []),
+      ]));
       return stats;
     }
   }

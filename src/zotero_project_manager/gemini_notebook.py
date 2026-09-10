@@ -164,7 +164,8 @@ def write_notebooklm_overview(
         f"- Exported: {exported_at}",
         f"- Prepared source files: {source_count}",
         "",
-        "Select the files you want from this folder in **Add sources → Google Drive**. "
+        "Use **Add sources → Upload files**, or drag the prepared files into the notebook. "
+        "Google Drive is optional when this folder is Drive-synced. "
         "The `.zpm` directory contains zpm bookkeeping and should not be imported.",
         "",
     ]

@@ -20,6 +20,7 @@ from .collections import (
 )
 from .config import AppConfig, ConfigError, load_config, make_project, save_config
 from .diagnostics import run_diagnostics
+from .destinations import DestinationError, deliver, validate_destination
 from .exporter import CollectionExporter, ExportError
 from .filenames import FILENAME_TEMPLATES, validate_filename_template
 from .gemini_notebook import EXPORT_PROFILES, validate_export_profile
@@ -205,6 +206,22 @@ def export(
             ),
         ),
     ] = "standard",
+    destination: Annotated[
+        str | None,
+        typer.Option("--to", help="Send exported files to gemini-notebook or devonthink."),
+    ] = None,
+    notebook_url: Annotated[
+        str | None,
+        typer.Option("--notebook-url", help="Open a specific Gemini Notebook instead of its home page."),
+    ] = None,
+    devonthink_group: Annotated[
+        str,
+        typer.Option("--devonthink-group", help="Destination group UUID or item link; otherwise show the app's chooser."),
+    ] = "",
+    prepare_only: Annotated[
+        bool,
+        typer.Option("--prepare-only", help="Prepare the destination's files without opening apps."),
+    ] = False,
     recursive: Annotated[
         bool,
         typer.Option("--recursive/--no-recursive", help="Include descendant collections."),
@@ -295,6 +312,13 @@ def export(
     configure_logging(verbose)
     config = _config(ctx)
     try:
+        validate_destination(destination, notebook_url)
+        if devonthink_group and destination != "devonthink":
+            raise DestinationError("--devonthink-group requires --to devonthink.")
+        if prepare_only and destination is None:
+            raise DestinationError("--prepare-only requires --to.")
+        if destination == "gemini-notebook":
+            profile = "notebooklm"
         with ZoteroDatabase(
             _data_dir(zotero_dir, database, config),
             database_path=database,
@@ -322,13 +346,25 @@ def export(
                 export_profile=_export_profile(profile),
             )
             stats = exporter.export_many(selected, forest)
-    except (ZoteroDatabaseError, CollectionError, ConfigError, ExportError, OSError) as exc:
+    except (ZoteroDatabaseError, CollectionError, ConfigError, ExportError, DestinationError, OSError) as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 
     if dry_run:
         typer.echo("Dry run; no files were written.")
     _print_stats(stats, show_changes=dry_run or prune)
+    if destination and not dry_run:
+        try:
+            for result in stats:
+                typer.echo(deliver(
+                    result, destination, notebook_url=notebook_url,
+                    devonthink_group=devonthink_group, prepare_only=prepare_only,
+                ))
+        except (DestinationError, OSError) as exc:
+            typer.echo(f"Files were exported, but the app handoff failed: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+    elif destination:
+        typer.echo(f"Would send to {destination}; no apps opened during a dry run.")
 
 
 @app.command("plugin-export", hidden=True)
