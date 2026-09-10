@@ -78,7 +78,7 @@ def test_script_receives_json_data_and_group_as_arguments(tmp_path, monkeypatch)
 
     def fake_run(argv, **options):
         calls.append(argv)
-        assert json.loads(Path(argv[2]).read_text()) == plan
+        assert json.loads(Path(argv[2]).read_text(encoding="utf-8")) == plan
         assert argv[3] == "group-with-quotes\""
         assert options.get("shell") is None
         return subprocess.CompletedProcess(argv, 0, "Linked 1 files", "")
@@ -97,7 +97,7 @@ def test_failed_app_handoff_is_reported(monkeypatch):
 
 
 def test_devonthink_script_targets_only_version_four():
-    source = (destinations.RESOURCES / "devonthink.applescript").read_text()
+    source = (destinations.RESOURCES / "devonthink.applescript").read_text(encoding="utf-8")
     assert 'tell application id "com.devon-technologies.think"' in source
     assert 'tell application id "DNtp"' not in source
     assert 'tell application id "com.devon-technologies.think3"' not in source
