@@ -1,0 +1,210 @@
+#+TITLE: Zotero Project Manager — research workflow
+#+CATEGORY: project
+#+PROPERTY: PROJECT_ID zotero-project-manager
+#+STARTUP: overview
+#+TODO: NEXT(n) TODO(t) WAITING(w@/!) | DONE(d!) CANCELLED(c@)
+
+* Goal
+Keep Zotero as the source of truth and export selected collections into stable,
+app-independent research workspaces. Preserve originals, annotations/notes,
+filename/layout choices, and repeatable incremental updates.
+
+Success means one standard workspace per selected collection, clear export
+summaries, working Settings, and no app-specific folders, launchers, or upload
+steps in the plugin. Users choose how to use exported files in other apps.
+
+* Context
+- Main project folder: =/Users/sbilmis/developer/projects/zotero-project-manager=.
+- Stable release target: Zotero and source CLI =1.1.0=.
+- Installed plugin =1.1.0pre5= was confirmed locally. The user reports it works
+  and supplied a screenshot confirming the simplified menu on 2026-09-11.
+- The user approved a public maintenance release and plugin update-feed update.
+  Editing the checkout or publishing does not itself upgrade local installations.
+- On 2026-09-11 the user rejected the extra Gemini/DT4 workflow complexity and
+  approved removing both integrations, their CLI options, and the Notebook profile.
+- Existing exported folders, notebooks, DT4 records, and Zotero originals are
+  outside the cleanup scope and must not be deleted or migrated.
+- The earlier integration implementation is retained in Git history at =da65ea5=.
+- Zotero MCP remains an evaluated proposal, not an installed or enabled integration.
+
+* Tasks
+- Canonical tracker: [[file:PROJECT.org][PROJECT.org]]
+# Keep one NEXT action. Checkboxes are steps within a task.
+
+** NEXT Evaluate Zotero MCP in read-only mode
+This is the next planned item, not authorization to install or enable it now.
+
+- [ ] Agree on a small pilot collection and the AI client to connect.
+- [ ] Review current release, connection settings, and data-sharing implications.
+- [ ] If approved, connect with write operations and semantic indexing disabled.
+- [ ] Test metadata, PDF-text, and annotation retrieval against known papers.
+- [ ] Check coexistence with zpm's standard exports and collection menu.
+- [ ] Demonstrate a proposed research shortlist, then export a user-approved
+  collection to its standard local workspace.
+- [ ] Record usefulness and any separately authorized next capabilities.
+
+Acceptance: useful, verifiable retrieval without modifying Zotero or disrupting
+exports. Write access, embeddings, or remote processing require a separate decision.
+
+** DONE User validation of the simplified preview
+- Installed pre5 confirmed; user reports the build works.
+- Screenshot confirms only Export Collection, Export Collection + Annotations,
+  and Settings, with no Gemini/DT4 options.
+- Detailed regression scenarios remain available in [[file:docs/TESTING.md][the test guide]].
+
+** TODO Confirm the stable update in the user's Zotero installation
+- [ ] Use Tools -> Plugins -> gear -> Check for Updates to upgrade pre5 to 1.1.0.
+- [ ] Confirm the stable version and the same simplified menu/settings behavior.
+- [ ] Refresh Add-on Market after its catalog catches up; do not reinstall an
+  older version if the market still lists 1.0.0.
+
+** DONE Remove experimental app integrations
+- Removed Gemini/DT4 commands, remembered-link UI, AppleScript resources, delivery
+  modules, app-specific CLI flags, and the flattened Notebook export profile.
+- Retained ordinary exports, non-PDF attachment support, filename/layout settings,
+  incremental updates, unmanaged-file protections, and the concurrent-export guard.
+- Legacy non-standard named CLI projects report an explicit migration error;
+  loading a config does not silently change their output behavior or rewrite it.
+- Old notebook preferences remain unused; no deletion of user data or app records.
+
+** DONE Preserve the Settings / Choose correction
+- The pane load handler resolves Zotero's isolated script scope explicitly.
+- The native folder dialog belongs to Settings, with cancellation, retry/error
+  handling, and tolerance for stale starting paths.
+- Existing settings regression tests remain in place.
+
+** DONE Verify the simplified source and installer
+- Regular suites: 87 Python tests and 28 JavaScript tests passed.
+- Coverage includes menu contents, installer resource exclusion, old-config
+  handling, repeat export, existing-folder preservation, and settings persistence.
+- Installer packaging checks retain the pre4 settings fix and exclude app scripts.
+- These checks do not replace the manual upgrade/native UI verification above.
+
+* Notes
+** Current workflow
+- Select a Zotero collection and export it to a permanent parent folder.
+- Export Collection copies attachments according to settings; Export Collection +
+  Annotations also generates annotation/child-note documents in the same workspace.
+- Selecting Agentic_AI includes its descendants, not its My-AI parent or siblings.
+- Existing workspaces retain their recorded filename and annotation layout.
+- Re-export updates the same workspace. Ordinary exports do not prune old files.
+- Use another app manually if desired; zpm does not index, upload, synchronize
+  external app records, or create app-specific workspace copies.
+- Hidden =.zpm/= files are exporter bookkeeping; keep them out of manual imports.
+
+** Upgrading from the experimental previews
+- Existing =Agentic_AI= and =Agentic_AI - NotebookLM= folders remain untouched by
+  installation. Standard exports update only the selected standard workspace.
+- Do not automatically remove old folders: external applications may still rely
+  on them. Any cleanup of those folders/records needs a separate user request.
+- Old notebook-link preferences are left dormant, not used or cleared.
+- Removed CLI flags: =--to=, =--notebook-url=, =--devonthink-group=,
+  =--prepare-only=, and =--profile=.
+- Old standard named projects remain compatible. For a config project containing
+  =export_profile = "notebooklm"=, review its output folder/layout and remove that
+  setting only if standard export is intended. No automatic conversion is done.
+
+** Future integration reconsideration (parked)
+The prior automation/API research is historical, not a commitment to restore the
+features. Revisit only with explicit approval and a demonstrable benefit beyond
+opening an app and manually selecting files.
+
+API status was checked on 2026-09-10: Google documented preview Enterprise notebook
+creation/source APIs requiring Enterprise access and Google Cloud authentication.
+That did not establish access for the user's personal Notebook account. Recheck
+eligibility and current support before proposing any implementation. A Gemini model
+API key alone was not the Notebook integration used here.
+
+If an integration is later approved, keep its delivery adapter separate from the
+standard exporter, verify end-to-end results/retries, and avoid duplicate folders
+unless a genuinely different export format is explicitly requested.
+
+* Decisions
+- Simplify to the standard, app-independent exporter as approved on 2026-09-11.
+- Remove both Gemini Notebook and DT4 feature sets, not just their menu labels.
+- Retain the Choose fix and all core export/safety behavior.
+- Keep existing folders, user preferences, cloud notebooks, and DT4 records intact.
+- Preserve withdrawn code in Git history; do not reset or rewrite branch history.
+- Keep Zotero MCP as the single NEXT proposal; do not install or enable it now.
+- User approved merging the tested maintenance release to main, publishing the
+  stable GitHub release, and updating the public plugin feed on 2026-09-11.
+- Use 1.1.0 so both public 1.0.0 and 1.1.0 preview installations can upgrade.
+- Publishing the release runs the existing PyPI workflow. Do not alter repository
+  protections or the third-party Add-on Market registry/refresh configuration.
+
+* Questions / Ideas
+- Does the standard export/annotation layout meet the user's daily workflow needs?
+- Which pilot collection and AI client should be used if Zotero MCP is approved?
+- Would verified read-only retrieval justify adding MCP without complicating exports?
+- Remote AI clients/embedding providers can receive library content; MCP does not
+  automatically make that processing local.
+
+* References
+- [[file:README.md][Project README and CLI usage]]
+- [[file:zotero-plugin/README.md][Zotero plugin guide]]
+- [[file:CHANGELOG.md][Changelog]]
+- [[file:dist/zpm-zotero-1.1.0.xpi][Stable Zotero installer]]
+- [[https://github.com/sbilmis/zotero-project-manager/releases/tag/v1.1.0][Stable release page]]
+- [[file:docs/TESTING.md][Agentic_AI installation and test guide]]
+- [[https://github.com/sbilmis/zotero-project-manager][Project repository]]
+- [[https://github.com/sbilmis/zotero-project-manager/tree/da65ea5ee1606f4026fa5418922b1cce17557135][Historical app-integration implementation before removal]]
+- [[https://docs.cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-notebooks][Previously reviewed Enterprise notebook API]]
+- [[https://docs.cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-notebooks-sources][Previously reviewed Enterprise source API]]
+- [[https://mcpmarket.com/server/zotero-4][Zotero MCP directory listing]]
+- [[https://github.com/cookjohn/zotero-mcp][Zotero MCP source and capabilities]]
+- [[file:/Users/sbilmis/.emacs.d/snippets/org-mode/tproj][Original tproj snippet]]
+
+* Work Log
+** [2026-09-11 Fri] Prepare the stable maintenance release after user validation
+- User confirmed pre5 works and the Gemini/DT4 options are gone.
+- Prepared version 1.1.0 with unchanged tested runtime code, stable release notes,
+  update-feed hash verification, and instructions for public updates.
+- User authorized publication. Local upgrade and Add-on Market cache refresh are
+  separate from GitHub publication and remain checks in the test guide.
+
+** [2026-09-11 Fri] Simplify to standard folder exports
+- User approved removing both app integrations after testing pre4 and finding the
+  extra workspace and manual-upload steps unhelpful; DT4 also reported a script error.
+- Removed app-specific code/resources/options and retained the Settings fix.
+- Added regression checks for one standard workspace, preservation of legacy
+  folders, simplified menus, installer contents, and explicit legacy-config migration.
+- Local suites passed: 87 Python and 28 JavaScript tests. Pre5 requires manual
+  installation; existing folders/app records were not touched.
+- Prior log entries below describe superseded experiments, not current features.
+
+** [2026-09-11 Fri] Correct the Settings Choose button
+- Confirmed the installed pre3 XPI and inspected Zotero's preference-pane loader.
+- Reproduced the initialization error in a two-scope regression harness, then
+  corrected the scope lookup and native folder picker's parent window.
+- Added manual upgrade, saved-path, Choose, cancellation, and persistence checks.
+- All 40 JavaScript tests and 99 Python tests passed (2 opt-in desktop tests
+  skipped). Built and integrity-checked the pre4 XPI; native-dialog confirmation
+  in the user's Zotero profile remains a manual check after upgrading.
+- User approved fixing, rebuilding, and pushing this correction; this does not
+  install the new XPI, merge to main, or publish a release.
+
+** [2026-09-10 Thu] Implement remembered links and prepare the GitHub handoff
+- Implemented per-collection saved links, first-send setup, and edit/clear actions.
+- Verified URL validation, collection isolation, simulated plugin reload,
+  cancellation, and unchanged DT4 routing with automated tests.
+- Updated documentation and prepared version =1.1.0pre3= for manual installation.
+- User authorized committing/pushing the work; this does not publish a release
+  or install the preview into the running Zotero profile.
+
+** [2026-09-10 Thu] Record Notebook automation alternatives
+- Checked official Enterprise API documentation and the current browser
+  connector's notebook-creation flow.
+- Recorded remembered notebook links, browser-assisted creation, Drive-linked
+  sources, and the conditions for changing to an official API adapter.
+- Documentation only: did not create notebooks, upload files, install an
+  extension, connect an API, or change the current preview's behavior.
+
+** [2026-09-10 Thu] Establish the destination workflow and project notebook
+- Located the correct checkout and distinguished source changes from installed
+  release versions.
+- Implemented and tested the two destination handoffs; built local previews.
+- Corrected the DEVONthink target to DT4 after confirming both versions exist.
+- Reviewed Zotero MCP as a possible research/organization companion, without
+  installing it or changing library permissions.
+- Created this notebook from the existing =tproj= snippet and recorded MCP
+  evaluation as the sole NEXT action.

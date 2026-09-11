@@ -1,10 +1,32 @@
 from typer.testing import CliRunner
+import pytest
 
 from zotero_project_manager.cli import app
 from zotero_project_manager.config import AppConfig, save_config
 
 
 runner = CliRunner()
+
+
+@pytest.mark.parametrize("option", [
+    ["--to", "devonthink"], ["--to", "gemini-notebook"],
+    ["--notebook-url", "https://example.com"], ["--devonthink-group", "group"],
+    ["--prepare-only"], ["--profile", "notebooklm"],
+])
+def test_removed_app_options_are_rejected_before_export(tmp_path, option):
+    output = tmp_path / "exports"
+    result = runner.invoke(app, ["export", "My-AI", "--output", str(output), *option])
+    assert result.exit_code == 2, result.output
+    assert "No such option" in result.output
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("command", [["export"], ["status"], ["project", "add"], ["plugin-export"]])
+def test_cli_help_has_no_app_options(command):
+    result = runner.invoke(app, [*command, "--help"], color=False)
+    assert result.exit_code == 0, result.output
+    for removed in ["--profile", "--to ", "--notebook-url", "--devonthink-group", "--prepare-only"]:
+        assert removed not in result.output
 
 
 def test_list_command(zotero_fixture: object) -> None:

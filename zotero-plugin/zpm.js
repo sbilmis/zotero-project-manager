@@ -166,6 +166,7 @@ var ZPMPlugin = {
   id: ZPM_PLUGIN_ID,
   rootURI: "",
   menuID: null,
+  exportInProgress: false,
 
   async startup({ id, rootURI }) {
     this.id = id;
@@ -244,6 +245,11 @@ var ZPMPlugin = {
   },
 
   async exportSelected(context, annotations) {
+    if (this.exportInProgress) {
+      this.alert("Export in progress", "Wait for the current export to finish.");
+      return;
+    }
+    this.exportInProgress = true;
     try {
       const row = context.collectionTreeRow;
       if (!row?.isCollection() || !row.ref?.key) {
@@ -280,6 +286,8 @@ var ZPMPlugin = {
     } catch (error) {
       Zotero.logError(error);
       this.alert("zpm export failed", error.message || String(error));
+    } finally {
+      this.exportInProgress = false;
     }
   },
 
@@ -450,5 +458,6 @@ if (typeof module !== "undefined") {
     zpmCreatorName,
     zpmTrimOutput,
     ZPM_ANNOTATION_LAYOUTS,
+    ZPMPlugin,
   };
 }

@@ -1,6 +1,7 @@
+<!-- Inline handlers run in the Settings window; resolve the plugin's pane sandbox explicitly. -->
 <vbox id="zpm-preferences-pane"
       xmlns:html="http://www.w3.org/1999/xhtml"
-      onload="ZPMPreferences.init()">
+      onload="Zotero_Preferences.getScope('zpm-preferences').ZPMPreferences.init()">
     <groupbox id="zpm-preferences-locations">
         <label><html:h2>Export locations</html:h2></label>
         <html:p class="zpm-preferences-intro">

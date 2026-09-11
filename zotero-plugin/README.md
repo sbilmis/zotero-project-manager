@@ -2,7 +2,8 @@
 
 The plugin adds **Export with zpm** to Zotero's collection context menu and performs
 the complete export inside Zotero. It requires no Python installation, Homebrew,
-pipx, executable path, or subprocess.
+pipx, or executable configuration. Folder exports remain entirely in Zotero;
+no external app handoffs, AppleScript, or uploads are performed.
 
 The plugin reads collections, metadata, attachments, notes, and annotations through
 Zotero's in-process APIs. It copies files outward to the selected export directory
@@ -20,6 +21,25 @@ Open **Settings…** from a collection's **Export with zpm** menu, or open Zoter
 
 The first export prompts for a destination if no valid default exists. Later exports
 update the collection's existing workspace without asking again.
+
+Version **1.1.0** includes the settings initialization fix: the saved folder appears on
+opening the pane, and **Choose…** opens a native folder-selection dialog attached
+to Settings. Cancel preserves the current folder. You can also type an absolute
+folder path and leave the field to save it; the status below confirms the change.
+
+## Standard export workflow
+
+The collection menu contains **Export Collection**, **Export Collection +
+Annotations**, and **Settings…**. Both exports use the same standard workspace;
+repeat exports update it rather than creating an app-specific copy. Existing
+workspaces retain their recorded layout and filename settings.
+
+Use the exported files manually in an app of your choice. The experimental
+Gemini Notebook and DEVONthink actions, link setup, and Notebook-specific export
+format are not included in the stable release. Existing exported folders, saved preferences,
+notebooks, and DT4 records are left untouched. Old notebook links are unused.
+
+See [the Agentic_AI test guide](../docs/TESTING.md) for installation and checks.
 
 Generated manifests, metadata, indexes, and summaries live under `.zpm/`, leaving
 normal workspace names available for files attached in Zotero. Existing root-level

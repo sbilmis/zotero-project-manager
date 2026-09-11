@@ -225,6 +225,27 @@ test("native export copies PDFs and Markdown while isolating control files", asy
   assert.equal(second.copied, 0);
 });
 
+test("standard export creates one workspace and preserves a legacy Notebook sibling", async (context) => {
+  const value = await fixture();
+  context.after(() => fs.rm(value.root, { recursive: true, force: true }));
+  const legacy = path.join(value.output, "My Project - NotebookLM");
+  await fs.mkdir(legacy, { recursive: true });
+  const oldFile = path.join(legacy, "collection-overview.md");
+  await fs.writeFile(oldFile, "Existing exported sources\n");
+  const fileSystem = new NodeFileSystem();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const result = await exportSnapshot(snapshot(value.pdf, value.markdown), fileSystem, "ROOTKEY1", {
+      outputDir: value.output, exportAnnotations: true,
+    });
+    assert.equal(result.workspace, path.join(value.output, "My Project"));
+    assert.equal("notebooklmSources" in result, false);
+  }
+  assert.deepEqual((await fs.readdir(value.output)).sort(), ["My Project", "My Project - NotebookLM"]);
+  assert.deepEqual(await fs.readdir(legacy), ["collection-overview.md"]);
+  assert.equal(await fs.readFile(oldFile, "utf8"), "Existing exported sources\n");
+  await assert.rejects(fs.access(path.join(value.output, "My Project", "collection-overview.md")));
+});
+
 test("legacy root control files migrate without deleting personal README files", async (context) => {
   const value = await fixture();
   context.after(() => fs.rm(value.root, { recursive: true, force: true }));

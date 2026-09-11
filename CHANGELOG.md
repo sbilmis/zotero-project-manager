@@ -2,6 +2,90 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 1.1.0 — 2026-09-11
+
+Maintenance release with the same standard export feature set as public 1.0.0.
+
+- Fix Settings initialization in Zotero 9 so saved values and controls load correctly.
+- Fix the Choose folder button, attach its dialog to Settings, tolerate stale
+  starting paths, preserve Cancel, and show errors while allowing retries.
+- Prevent concurrent plugin exports from writing the same workspace at once.
+- Retain PDF/attachment exports, annotations and child notes, filename/layout
+  settings, incremental updates, and the existing read-only safeguards.
+- Add regression tests, a focused installation/test guide, and project notes.
+- Upgrade 1.0.0 and 1.1.0 previews through the standard plugin update feed.
+- The withdrawn Gemini Notebook/DEVONthink preview integrations are not included;
+  their existing exported folders and app records are not deleted or migrated.
+- For CLI preview users only, require explicit migration of saved non-standard
+  project profiles instead of silently changing their output behavior.
+- The user confirmed the simplified pre5 build works and its menu is correct.
+
+## 1.1.0.dev5 — simplified local preview
+
+- Remove experimental Gemini Notebook/DEVONthink menu actions, remembered-link
+  UI, desktop handoff scripts, destination CLI options, and the Notebook export profile.
+- Keep standard collection exports, notes/annotations, non-PDF attachments,
+  filename/layout settings, incremental updates, and concurrent-export protection.
+- Preserve the pre4 Settings initialization and Choose-button fixes.
+- Leave existing exported folders, Zotero preferences/originals, notebooks, and
+  DT4 records untouched; integration source remains recoverable in Git history.
+- Reject saved non-standard CLI project profiles with an explicit migration
+  message instead of silently changing the export destination or layout.
+- Add standard-menu, installer-content, legacy-config, and existing-folder
+  preservation tests. Publish no release or update-feed changes in this preview.
+
+## 1.1.0.dev4 — local preview
+
+- Fix the settings pane's startup handler to resolve its isolated Zotero 9 scope,
+  restoring saved values and event handlers for Choose and the other settings.
+- Attach the folder picker to Settings, tolerate stale starting paths, prevent
+  duplicate dialogs, and display picker errors with retry support.
+- Preserve the saved folder on cancellation and allow initialization retries.
+- Add settings-scope and picker regression tests plus a focused manual test guide.
+- Package Zotero preview 1.1.0pre4; CLI behavior and the public update feed are unchanged.
+
+## 1.1.0.dev3 — local preview
+
+- Remember a Gemini Notebook URL per Zotero library/collection key, surviving
+  restarts and renames without confusing same-named collections.
+- Add **Set Gemini Notebook Link…** to save, replace, or forget a link, and
+  offer link setup on the first Send.
+- Validate direct Google notebook URLs, retain account selectors, and preserve
+  existing links when edits are cancelled or invalid.
+- Keep notebook creation and uploads manual, with DT4 handoffs independent.
+- Add link/routing regression tests and an Agentic_AI installation/test guide.
+- Run CI on codex branches as well as main and pull requests.
+
+## 1.1.0.dev2 — local preview
+
+- Target DEVONthink 4 explicitly, with a version check and no fallback to DT3.
+- Label the menu **Send to DEVONthink 4…** and verify the live handoff against DT4.
+
+## 1.1.0.dev1 — local preview
+
+- Add independent **Send to Gemini Notebook…** and **Send to DEVONthink…**
+  collection-menu actions and CLI `export --to` destinations.
+- Open prepared Notebook sources in the browser and select their exact files in
+  Finder for manual upload; support an existing notebook URL from the CLI.
+- Index exported files in a user-selected DEVONthink database/group, preserve the
+  collection hierarchy, refresh existing indexed records, and avoid duplicate paths.
+- Hand off only files produced by the current export, including requested notes,
+  with path-boundary checks and no Zotero database or attachment writes.
+- Add `--prepare-only`, destination-aware dry runs, shared macOS scripts, and
+  opt-in live app tests with synthetic documents.
+- Build local XPI previews with `--development`; published release builds still
+  require matching update-feed hashes.
+
+### Previously prepared Notebook profile
+
+- Add a `notebooklm` export profile to the Python CLI and named projects.
+- Add **Prepare for Gemini Notebook (NotebookLM)** to the native Zotero plugin.
+- Create separate flattened `Collection - NotebookLM/` workspaces containing only
+  supported source types, sidecar annotation Markdown, and a managed source overview.
+- Warn when more than 50 prepared sources may exceed the current default plan limit.
+- Keep uploads manual and avoid unofficial NotebookLM APIs,
+  browser sessions, stored Google credentials, and background synchronization.
+
 ## 1.0.0 — 2026-07-19
 
 - Make Zotero plugin 1.0.0 completely self-contained: exports now run through a

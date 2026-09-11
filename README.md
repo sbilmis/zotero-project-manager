@@ -25,8 +25,9 @@ and conservative; the CLI provides explicit administrative controls.
 
 ## Zotero 9 plugin
 
-The plugin runs entirely inside Zotero. It does not require Python, Homebrew, pipx,
-an executable path, temporary bridge files, or subprocesses.
+Exports run inside Zotero and do not require Python, Homebrew, pipx, or an
+executable path. Exports create and update local workspaces without launching
+other apps, running AppleScript, or uploading files.
 
 Download the XPI from the [latest GitHub release](https://github.com/sbilmis/zotero-project-manager/releases/latest),
 then open **Zotero → Tools → Plugins → gear menu → Install Plugin From File…**.
@@ -51,6 +52,36 @@ Settings control:
 The first export asks for a destination if no valid default exists. Zotero can install
 future releases automatically when **Update Add-ons Automatically** is enabled in the
 Plugins gear menu; **Check for Updates** provides a manual check.
+
+## One workspace, your choice of app
+
+Export a collection once and use its standard folder wherever you need it. For
+example, selecting **My-AI → Agentic_AI** exports to **Agentic_AI/** and preserves
+its descendants inside that workspace. Re-exporting updates the same workspace.
+Choose **Export Collection + Annotations** to include annotations and child notes.
+
+Open the target app yourself and select the exported files you want to use. zpm
+has no app-specific Send commands, stored notebook-link UI, automatic app indexing,
+uploading, or separate Notebook export format. The hidden `.zpm/` directory is
+bookkeeping, not material to upload or import. You choose the files and compatible
+types in the destination app.
+
+Stable **1.1.0** keeps the public 1.0.0 feature set and fixes Settings/Choose while
+adding concurrent-export protection. The experimental Gemini Notebook/DT4 preview
+integrations are not included; standard exports and naming/layout settings remain.
+Existing export folders (including old ` - NotebookLM` folders), Google notebooks,
+DT4 records, and Zotero originals are not deleted or migrated. Old notebook-link
+preferences are left unused; the simplified plugin does not read or clear them.
+The earlier implementation remains in Git history.
+
+The CLI no longer accepts `--to`, `--notebook-url`, `--devonthink-group`,
+`--prepare-only`, or `--profile`. Existing standard named projects still work.
+A saved project with `export_profile = "notebooklm"` is rejected with a migration
+message: review its output directory and layout, then remove that setting in its
+TOML config only if you want standard export. zpm never silently switches the project
+or rewrites the config on load.
+
+See [the Agentic_AI testing guide](docs/TESTING.md) for installation and checks.
 
 ## Python CLI
 
@@ -179,11 +210,18 @@ python -m venv .venv
 node --test zotero-plugin/tests/*.test.cjs
 ```
 
-Build the reproducible Zotero XPI with:
+Build the release XPI and verify its update-feed entry with:
 
 ```bash
 .venv/bin/python scripts/build_zotero_plugin.py
 ```
+
+Install `dist/zpm-zotero-1.1.0.xpi` using Zotero's **Tools → Plugins → gear →
+Install Plugin From File…**, or use the XPI from the matching GitHub release.
+The installed Homebrew/pipx release does not change when this checkout changes;
+use `.venv/bin/python -m zotero_project_manager` to run the CLI from this checkout.
+For unpublished development versions only, pass `--development` to build without
+a published feed entry. Release builds and CI verify the exact update-feed hash.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [PUBLISHING.md](PUBLISHING.md), the
 [plugin guide](zotero-plugin/README.md), and [CHANGELOG.md](CHANGELOG.md) for focused

@@ -89,6 +89,16 @@ def load_config(path: Path | None = None) -> AppConfig:
         if not isinstance(values, dict):
             raise ConfigError(f"Project {name!r} must be a TOML table")
         _validate_project_name(name)
+        # Do not silently redirect a project saved by an app-specific preview.
+        # Legacy standard projects remain compatible; no file is rewritten here.
+        legacy_profile = values.get("export_profile")
+        if legacy_profile not in (None, "standard"):
+            raise ConfigError(
+                f"Project {name!r} uses removed export profile {legacy_profile!r}. "
+                f"Review its output directory and layout in {config_path}, then "
+                "remove export_profile to explicitly switch to standard folder export. "
+                "Existing exported folders are unchanged."
+            )
         selectors = values.get("collections")
         if not isinstance(selectors, list) or not selectors or not all(
             isinstance(selector, str) and selector for selector in selectors

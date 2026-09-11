@@ -71,3 +71,24 @@ def test_invalid_annotation_layout_is_rejected() -> None:
 def test_missing_config_returns_empty_defaults(tmp_path: Path) -> None:
     path = tmp_path / "missing.toml"
     assert load_config(path) == AppConfig(path=path)
+
+
+def test_legacy_standard_profile_is_accepted_without_rewriting(tmp_path: Path) -> None:
+    path = tmp_path / "config.toml"
+    content = '[projects.ai]\ncollections = ["My-AI"]\nexport_profile = "standard"\n'
+    path.write_text(content, encoding="utf-8")
+    config = load_config(path)
+    assert config.projects["ai"].collections == ("My-AI",)
+    assert path.read_text(encoding="utf-8") == content
+    save_config(config)
+    assert "export_profile" not in path.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("profile", ["notebooklm", "unknown"])
+def test_removed_profile_requires_explicit_migration(tmp_path: Path, profile: str) -> None:
+    path = tmp_path / "config.toml"
+    content = f'[projects.ai]\ncollections = ["My-AI"]\nexport_profile = "{profile}"\n'
+    path.write_text(content, encoding="utf-8")
+    with pytest.raises(ConfigError, match="uses removed export profile"):
+        load_config(path)
+    assert path.read_text(encoding="utf-8") == content

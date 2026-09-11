@@ -11,6 +11,21 @@ from zotero_project_manager.manifest import load_manifest
 from zotero_project_manager.zotero import ZoteroDatabase
 
 
+def test_standard_export_preserves_legacy_notebook_sibling(tmp_path, zotero_fixture):
+    output = tmp_path / "exports"
+    legacy = output / "My-AI - NotebookLM"
+    legacy.mkdir(parents=True)
+    sentinel = legacy / "collection-overview.md"
+    sentinel.write_bytes(b"Existing exported sources must not be touched.\n")
+    before = sentinel.read_bytes()
+    _initial_export(output, zotero_fixture)
+    _initial_export(output, zotero_fixture)
+    assert sentinel.read_bytes() == before
+    assert {child.name for child in output.iterdir()} == {"My-AI", "My-AI - NotebookLM"}
+    assert list(legacy.iterdir()) == [sentinel]
+    assert not (output / "My-AI" / "collection-overview.md").exists()
+
+
 def test_recursive_export_and_incremental_update(tmp_path: Path, zotero_fixture: object) -> None:
     fixture = zotero_fixture
     output = tmp_path / "exports"
