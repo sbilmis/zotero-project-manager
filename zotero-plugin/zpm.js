@@ -1,4 +1,4 @@
-/* global ChromeUtils, Components, IOUtils, PathUtils, Services, ZPMNativeExporter, ZPMDestinations, Zotero */
+/* global ChromeUtils, Components, IOUtils, PathUtils, Services, ZPMNativeExporter, Zotero */
 
 const ZPM_PLUGIN_ID = "zpm@zotero-project-manager";
 const ZPM_PREF_OUTPUT = "extensions.zpm.outputDir";
@@ -200,38 +200,14 @@ var ZPMPlugin = {
               menuType: "menuitem",
               l10nID: "zpm-menu-export-pdfs",
               onCommand(_event, context) {
-                void plugin.exportSelected(context, false, false);
+                void plugin.exportSelected(context, false);
               },
             },
             {
               menuType: "menuitem",
               l10nID: "zpm-menu-export-annotations",
               onCommand(_event, context) {
-                void plugin.exportSelected(context, true, false);
-              },
-            },
-            {
-              menuType: "menuitem",
-              l10nID: "zpm-menu-export-notebooklm",
-              onCommand(_event, context) {
-                void plugin.exportSelected(context, true, true, "gemini-notebook");
-              },
-            },
-            {
-              menuType: "menuitem",
-              l10nID: "zpm-menu-notebook-link",
-              onCommand(_event, context) {
-                plugin.setNotebookLink(context);
-              },
-            },
-            {
-              menuType: "menuitem",
-              l10nID: "zpm-menu-export-devonthink",
-              onShowing(_event, context) {
-                context.setVisible(Boolean(Zotero.isMac));
-              },
-              onCommand(_event, context) {
-                void plugin.exportSelected(context, true, false, "devonthink");
+                void plugin.exportSelected(context, true);
               },
             },
             { menuType: "separator" },
@@ -268,9 +244,9 @@ var ZPMPlugin = {
     Zotero.debug("zpm companion plugin stopped");
   },
 
-  async exportSelected(context, annotations, notebooklm, destination = null) {
+  async exportSelected(context, annotations) {
     if (this.exportInProgress) {
-      this.alert("Export in progress", "Wait for the current export or app handoff to finish.");
+      this.alert("Export in progress", "Wait for the current export to finish.");
       return;
     }
     this.exportInProgress = true;
@@ -283,7 +259,7 @@ var ZPMPlugin = {
       if (!outputDir) {
         return;
       }
-      const annotationLayout = notebooklm ? "sidecar" : this.annotationLayout();
+      const annotationLayout = this.annotationLayout();
       const snapshot = await this.buildSnapshot(row.ref, annotations);
       const stats = await ZPMNativeExporter.exportSnapshot(
         snapshot,
@@ -292,31 +268,19 @@ var ZPMPlugin = {
         {
           outputDir,
           exportAnnotations: annotations,
-          includeNonPdf: notebooklm
-            || Boolean(Zotero.Prefs.get(ZPM_PREF_INCLUDE_NON_PDF)),
+          includeNonPdf: Boolean(Zotero.Prefs.get(ZPM_PREF_INCLUDE_NON_PDF)),
           annotationLayout,
-          notebooklm,
           filenameTemplate: String(
             Zotero.Prefs.get(ZPM_PREF_FILENAME_TEMPLATE) || "author_year_title",
           ),
         },
       );
-      if (destination) {
-        await this.sendExport(stats, destination, row.ref);
-        return;
-      }
       this.alert(
-        notebooklm ? "Gemini Notebook export complete" : "Export complete",
+        "Export complete",
         `${stats.collectionName}: ${stats.copied} copied, ${stats.updated} updated, `
           + `${stats.unchanged} unchanged, ${stats.missing} missing.\n\n${stats.workspace}`
           + (stats.retainedSettings.length
             ? `\n\nExisting workspace settings retained (${stats.retainedSettings.join(", ")}).`
-            : "")
-          + (stats.notebooklmSources
-            ? `\n\nPrepared sources: ${stats.notebooklmSources}.`
-            : "")
-          + (stats.notebooklmSourceLimitExceeded
-            ? "\nThis exceeds 50 sources; select a subset if required by your plan."
             : ""),
       );
     } catch (error) {
@@ -324,174 +288,6 @@ var ZPMPlugin = {
       this.alert("zpm export failed", error.message || String(error));
     } finally {
       this.exportInProgress = false;
-    }
-  },
-
-  setNotebookLink(context) {
-    if (this.exportInProgress) {
-      this.alert("Export in progress", "Wait for the current export or app handoff to finish.");
-      return;
-    }
-    try {
-      const row = context.collectionTreeRow;
-      if (!row?.isCollection() || !row.ref?.key) {
-        throw new Error("Select a Zotero collection before setting its notebook link.");
-      }
-      const url = this.promptNotebookLink(row.ref, false);
-      if (url === null) return;
-      this.alert(
-        "Gemini Notebook link",
-        url === ZPMDestinations.NOTEBOOK_URL
-          ? "The saved link was cleared for this collection. No notebook or sources were deleted."
-          : "Link saved for " + row.ref.name + ". Send to Gemini Notebook will open this notebook.\n\n"
-            + "Use the Google account that can access it. Nothing has been uploaded.",
-      );
-    } catch (error) {
-      Zotero.logError(error);
-      this.alert("Could not save notebook link", error.message || String(error));
-    }
-  },
-
-  promptNotebookLink(collection, forSend) {
-    const preference = ZPMDestinations.notebookLinkPreference(collection);
-    const input = { value: String(Zotero.Prefs.get(preference) || "") };
-    const message = "Notebook for " + collection.name + "\n\n"
-      + "Open or create your notebook in the browser, then paste its full URL here. "
-      + "The link is remembered for this collection, including after a Zotero restart or collection rename.\n\n"
-      + (forSend
-        ? "Leave this blank to open the Notebook home page without saving a link. Cancel stops the handoff; exported files remain."
-        : "Leave this blank and press OK to forget the saved link. Cancel keeps it unchanged.")
-      + "\n\nUse the correct Google account. This does not create a notebook or upload files.";
-    while (Services.prompt.prompt(
-      Zotero.getMainWindow(), "Set Gemini Notebook Link", message, input, null, { value: false },
-    )) {
-      if (!String(input.value).trim()) {
-        if (!forSend && Zotero.Prefs.get(preference) !== undefined) {
-          Zotero.Prefs.clear(preference);
-        }
-        return ZPMDestinations.NOTEBOOK_URL;
-      }
-      let url;
-      try {
-        url = ZPMDestinations.rememberedNotebookURL(input.value);
-      } catch (error) {
-        this.alert("Invalid notebook link", error.message || String(error));
-        continue;
-      }
-      Zotero.Prefs.set(preference, url);
-      return url;
-    }
-    return null;
-  },
-
-  notebookURLForCollection(collection) {
-    const preference = ZPMDestinations.notebookLinkPreference(collection);
-    const saved = Zotero.Prefs.get(preference);
-    if (saved) {
-      try {
-        return ZPMDestinations.rememberedNotebookURL(saved);
-      } catch (_error) {
-        this.alert("Invalid saved notebook link", "Please replace the saved link, or cancel and use Set Gemini Notebook Link to clear it.");
-      }
-    }
-    return this.promptNotebookLink(collection, true);
-  },
-
-  async sendExport(stats, destination, collection) {
-    const plan = await ZPMDestinations.deliveryPlan(stats, ZPMZoteroFileSystem);
-    if (!plan.files.length) {
-      this.alert("No files to send", "This collection has no available exported files.");
-      return;
-    }
-    if (destination === "devonthink") {
-      try {
-        const result = await this.runDesktopScript("devonthink.applescript", plan);
-        this.alert("DEVONthink 4", result);
-      } catch (error) {
-        throw new Error("Your files were exported to " + stats.workspace
-          + ", but the DEVONthink 4 handoff failed: " + error.message);
-      }
-      return;
-    }
-    const notebookURL = this.notebookURLForCollection(collection);
-    if (notebookURL === null) return;
-    this.alert(
-      "Ready for Gemini Notebook",
-      plan.files.length + " files are ready, including exported notes and annotations.\n\n"
-        + (notebookURL === ZPMDestinations.NOTEBOOK_URL
-          ? "Next, the Notebook home page and prepared files will open. Open or create a notebook. "
-          : "Next, your saved notebook and prepared files will open. ")
-        + "Drag the selected files into Add sources. "
-        + "You can also use Upload files.\n\n"
-        + "Nothing has been uploaded yet. Check the Sources panel after uploading; "
-        + "repeated uploads can create duplicates.\n\n"
-        + (plan.files.length > 50 ? "Choose a subset if this exceeds your plan's source limit.\n\n" : "")
-        + stats.workspace,
-    );
-    Zotero.launchURL(notebookURL);
-    if (Zotero.isMac) {
-      try {
-        await this.runDesktopScript("reveal-files.applescript", plan);
-        return;
-      } catch (error) {
-        Zotero.logError(error);
-      }
-    }
-    // Opening the folder remains useful if selecting files is unavailable.
-    Zotero.File.reveal(plan.files[0].path);
-  },
-
-  async runDesktopScript(scriptName, plan, groupID = "") {
-    if (!Zotero.isMac) throw new Error("DEVONthink integration requires macOS.");
-    const { Subprocess } = ChromeUtils.importESModule("resource://gre/modules/Subprocess.sys.mjs");
-    const directory = Components.classes["@mozilla.org/file/local;1"]
-      .createInstance(Components.interfaces.nsIFile);
-    directory.initWithPath(PathUtils.tempDir);
-    directory.append("zpm-handoff");
-    directory.createUnique(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0o700);
-    const planPath = PathUtils.join(directory.path, "files.json");
-    const scriptPath = PathUtils.join(directory.path, scriptName);
-    let process;
-    let timer;
-    const window = Zotero.getMainWindow();
-    try {
-      const source = await Zotero.File.getContentsAsync(this.rootURI + "scripts/" + scriptName);
-      await IOUtils.writeUTF8(scriptPath, source);
-      await IOUtils.writeUTF8(planPath, JSON.stringify(plan));
-      process = await Subprocess.call({
-        command: "/usr/bin/osascript",
-        arguments: [scriptPath, planPath, groupID],
-        stderr: "pipe",
-      });
-      if (process.stdin) await process.stdin.close();
-      let timedOut = false;
-      timer = window.setTimeout(() => {
-        timedOut = true;
-        void process.kill();
-      }, 600000);
-      const readOutput = async (pipe) => {
-        let output = "";
-        while (true) {
-          const chunk = await pipe.readString();
-          if (!chunk) break;
-          if (output.length < 12000) output += chunk.slice(0, 12000 - output.length);
-        }
-        return output.trim();
-      };
-      const [stdout, stderr, result] = await Promise.all([
-        readOutput(process.stdout), readOutput(process.stderr), process.wait(),
-      ]);
-      if (timedOut) throw new Error("The handoff timed out. Check the app before retrying.");
-      if (result.exitCode !== 0) {
-        const appName = scriptName === "reveal-files.applescript" ? "Finder" : "DEVONthink";
-        throw new Error((stderr || "The app did not accept the files.")
-          + "\nIf macOS denied access, allow Zotero to control " + appName + " in "
-          + "System Settings → Privacy & Security → Automation.");
-      }
-      return stdout;
-    } finally {
-      if (timer) window.clearTimeout(timer);
-      await IOUtils.remove(directory.path, { recursive: true, ignoreAbsent: true });
     }
   },
 
@@ -661,7 +457,7 @@ if (typeof module !== "undefined") {
   module.exports = {
     zpmCreatorName,
     zpmTrimOutput,
-    ZPMPlugin,
     ZPM_ANNOTATION_LAYOUTS,
+    ZPMPlugin,
   };
 }

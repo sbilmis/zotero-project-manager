@@ -22,7 +22,6 @@ def test_config_round_trip_with_named_project(tmp_path: Path) -> None:
         annotations=True,
         annotation_layout="bundle",
         filename_template="year_author_title",
-        export_profile="notebooklm",
     )
     expected = AppConfig(
         path=path,
@@ -37,10 +36,9 @@ def test_config_round_trip_with_named_project(tmp_path: Path) -> None:
     assert load_config(path) == expected
     assert load_config(path).projects["ai"].metadata is True
     assert load_config(path).projects["ai"].annotations is True
-    assert load_config(path).projects["ai"].annotation_layout == "sidecar"
+    assert load_config(path).projects["ai"].annotation_layout == "bundle"
     assert load_config(path).annotation_layout == "sidecar"
     assert load_config(path).projects["ai"].filename_template == "year_author_title"
-    assert load_config(path).projects["ai"].export_profile == "notebooklm"
 
 
 def test_relative_config_paths_resolve_from_config_directory(tmp_path: Path) -> None:
@@ -70,11 +68,27 @@ def test_invalid_annotation_layout_is_rejected() -> None:
         make_project("ai", ["My-AI"], annotation_layout="random")
 
 
-def test_invalid_export_profile_is_rejected() -> None:
-    with pytest.raises(ValueError, match="Unknown export profile"):
-        make_project("ai", ["My-AI"], export_profile="random")
-
-
 def test_missing_config_returns_empty_defaults(tmp_path: Path) -> None:
     path = tmp_path / "missing.toml"
     assert load_config(path) == AppConfig(path=path)
+
+
+def test_legacy_standard_profile_is_accepted_without_rewriting(tmp_path: Path) -> None:
+    path = tmp_path / "config.toml"
+    content = '[projects.ai]\ncollections = ["My-AI"]\nexport_profile = "standard"\n'
+    path.write_text(content, encoding="utf-8")
+    config = load_config(path)
+    assert config.projects["ai"].collections == ("My-AI",)
+    assert path.read_text(encoding="utf-8") == content
+    save_config(config)
+    assert "export_profile" not in path.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("profile", ["notebooklm", "unknown"])
+def test_removed_profile_requires_explicit_migration(tmp_path: Path, profile: str) -> None:
+    path = tmp_path / "config.toml"
+    content = f'[projects.ai]\ncollections = ["My-AI"]\nexport_profile = "{profile}"\n'
+    path.write_text(content, encoding="utf-8")
+    with pytest.raises(ConfigError, match="uses removed export profile"):
+        load_config(path)
+    assert path.read_text(encoding="utf-8") == content

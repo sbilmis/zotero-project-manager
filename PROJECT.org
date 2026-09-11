@@ -5,210 +5,158 @@
 #+TODO: NEXT(n) TODO(t) WAITING(w@/!) | DONE(d!) CANCELLED(c@)
 
 * Goal
-Keep Zotero as the source of truth while making selected research collections,
-attachments, notes, and annotations useful in two independent destinations:
-Gemini Notebook and DEVONthink 4. Preserve Zotero originals and support safe,
-repeatable exports.
+Keep Zotero as the source of truth and export selected collections into stable,
+app-independent research workspaces. Preserve originals, annotations/notes,
+filename/layout choices, and repeatable incremental updates.
 
-Success means both destination actions work from Zotero, their limitations are
-clear, and repeat exports do not create duplicate DT4 links. Evaluate Zotero MCP
-as a separate next step for finding and organizing material before export.
+Success means one standard workspace per selected collection, clear export
+summaries, working Settings, and no app-specific folders, launchers, or upload
+steps in the plugin. Users choose how to use exported files in other apps.
 
 * Context
 - Main project folder: =/Users/sbilmis/developer/projects/zotero-project-manager=.
-- The corrected checkout already contained a Notebook export profile; the new
-  work adds actual desktop handoffs to the plugin and Python CLI.
-- The local preview is =1.1.0pre4= for Zotero and =1.1.0.dev4= for the CLI.
-- On 2026-09-11, the installed Zotero plugin was confirmed as =1.1.0pre3=;
-  the user reported that Settings -> Choose did nothing. The pre4 correction
-  requires a manual plugin upgrade; the Homebrew CLI was last checked at =1.0.0=.
-- DT3 and DT4 are both installed. Only DT4 is an allowed destination.
-- Zotero MCP has been assessed from its documentation; it has not been installed,
-  connected, or tested alongside this plugin in this task.
+- Current preview: Zotero =1.1.0pre5=; source CLI =1.1.0.dev5=.
+- The installed plugin was confirmed at =1.1.0pre4= before this cleanup. Upgrading
+  to pre5 remains manual; editing the checkout does not update the Homebrew CLI.
+- On 2026-09-11 the user rejected the extra Gemini/DT4 workflow complexity and
+  approved removing both integrations, their CLI options, and the Notebook profile.
+- Existing exported folders, notebooks, DT4 records, and Zotero originals are
+  outside the cleanup scope and must not be deleted or migrated.
+- The earlier integration implementation is retained in Git history at =da65ea5=.
+- Zotero MCP remains an evaluated proposal, not an installed or enabled integration.
 
 * Tasks
 - Canonical tracker: [[file:PROJECT.org][PROJECT.org]]
-# Keep one NEXT action. If an issue tracker owns the queue, link to it instead
-# of maintaining a duplicate task list here. Checkboxes are steps within a task.
+# Keep one NEXT action. Checkboxes are steps within a task.
 
 ** NEXT Evaluate Zotero MCP in read-only mode
 This is the next planned item, not authorization to install or enable it now.
 
 - [ ] Agree on a small pilot collection and the AI client to connect.
-- [ ] Review the release, local connection settings, and data-sharing implications.
-- [ ] When setup is approved, install/connect the MCP plugin with write operations
-  disabled; leave semantic indexing off for the initial pilot.
-- [ ] Test metadata search, PDF-text retrieval, and annotation retrieval against
-  known papers; verify answers against the original documents.
-- [ ] Check coexistence with zpm, including collection menus and exports.
+- [ ] Review current release, connection settings, and data-sharing implications.
+- [ ] If approved, connect with write operations and semantic indexing disabled.
+- [ ] Test metadata, PDF-text, and annotation retrieval against known papers.
+- [ ] Check coexistence with zpm's standard exports and collection menu.
 - [ ] Demonstrate a proposed research shortlist, then export a user-approved
-  collection through the separate Gemini Notebook and DT4 actions.
-- [ ] Record whether the pilot is useful and what, if anything, to enable next.
+  collection to its standard local workspace.
+- [ ] Record usefulness and any separately authorized next capabilities.
 
-Acceptance: useful, verifiable retrieval without modifying Zotero items or
-disrupting exports. Any later write access or remote embedding setup needs a
-separate decision.
+Acceptance: useful, verifiable retrieval without modifying Zotero or disrupting
+exports. Write access, embeddings, or remote processing require a separate decision.
 
-** TODO Upgrade and validate the DT4-only preview inside Zotero
-- [ ] Install [[file:dist/zpm-zotero-1.1.0pre4.xpi][zpm-zotero-1.1.0pre4.xpi]] through
-  Tools -> Plugins -> gear -> Install Plugin From File.
-- [ ] Confirm the saved settings load and Choose opens a native folder dialog;
-  verify cancellation, saving, and persistence after restarting Zotero.
-- [ ] Confirm both destination menu actions appear.
-- [ ] Follow [[file:docs/TESTING.md][the Agentic_AI guide]] to save a notebook link,
-  restart Zotero, verify repeat routing, then test change/clear/cancel behavior.
-- [ ] Test Gemini Notebook with a small collection; complete the manual upload
-  and confirm the expected sources in the notebook.
-- [ ] Test DT4 with a permanent export folder and a chosen test group; confirm
-  hierarchy, annotation files, and links to exported copies.
-- [ ] Send the same collection again and confirm updates without duplicate links.
-- [ ] Confirm that DT3 is never targeted and Zotero originals are unchanged.
+** TODO Upgrade and validate the simplified preview inside Zotero
+- [ ] Install [[file:dist/zpm-zotero-1.1.0pre5.xpi][zpm-zotero-1.1.0pre5.xpi]] over pre4 and restart.
+- [ ] Confirm the menu has only Export Collection, Export Collection + Annotations,
+  and Settings; no Gemini/DT4 Send commands or notebook-link setup.
+- [ ] Verify Settings loads saved values; Choose, cancellation, and saving work.
+- [ ] Follow [[file:docs/TESTING.md][the Agentic_AI guide]] to export and repeat-export
+  the same standard workspace with local PDFs and annotations/child notes.
+- [ ] Confirm old Notebook export folders are unchanged and no new ones appear.
+- [ ] Confirm there are no external-app launches or AppleScript handoff errors.
 
-** DONE Implement independent Gemini Notebook and DT4 handoffs
-- Plugin collection-menu actions and CLI =export --to= options are implemented.
-- Only current export files are handed off; bookkeeping, unmanaged files, and
-  old retained attachment copies are excluded.
-- =--prepare-only= and destination-aware =--dry-run= are available.
+** DONE Remove experimental app integrations
+- Removed Gemini/DT4 commands, remembered-link UI, AppleScript resources, delivery
+  modules, app-specific CLI flags, and the flattened Notebook export profile.
+- Retained ordinary exports, non-PDF attachment support, filename/layout settings,
+  incremental updates, unmanaged-file protections, and the concurrent-export guard.
+- Legacy non-standard named CLI projects report an explicit migration error;
+  loading a config does not silently change their output behavior or rewrite it.
+- Old notebook preferences remain unused; no deletion of user data or app records.
 
-** DONE Restrict the DEVONthink destination to DT4
-- Use bundle ID =com.devon-technologies.think=, not the shared legacy =DNtp=
-  signature; verify version 4 before linking files.
-- Menu label: =Send to DEVONthink 4…=.
-- Live linking and repeat-send refresh passed with installed DT4 =4.3.2= using
-  a disposable database and synthetic documents.
+** DONE Preserve the Settings / Choose correction
+- The pane load handler resolves Zotero's isolated script scope explicitly.
+- The native folder dialog belongs to Settings, with cancellation, retry/error
+  handling, and tolerance for stale starting paths.
+- Existing settings regression tests remain in place.
 
-** DONE Implement remembered Notebook links
-- Save a direct Notebook URL per library ID and collection key in local Zotero
-  preferences. Collection renames and duplicate titles do not change the mapping.
-- Added first-send setup and =Set Gemini Notebook Link…= for saving/changing/
-  clearing. Invalid edits and cancellation preserve existing links.
-- Account selectors in the copied URL are retained. Browser login and access are
-  not inspected; the user must choose the correct Google account.
-- Browser-assisted creation and automatic uploads are still future options.
-
-** DONE Build and check the local preview
-- Latest regular suite: 99 Python tests and 40 JavaScript tests passed.
-- The separate DT4 live smoke test passed; the Finder selection live test also
-  passed during the preceding handoff implementation.
-- XPI archive integrity was checked. Python wheel and source archive were built.
-- This does not constitute an end-to-end test of the installed Zotero menu or
-  a completed upload to Gemini Notebook.
-
-** DONE Correct Settings initialization and folder selection
-- Resolve the plugin's isolated preference-pane scope from the markup load
-  handler; the previous window-global lookup left all controls uninitialized.
-- Parent the native folder picker to Settings, allow replacing invalid/stale
-  paths, preserve cancellation, and display errors without disabling retries.
-- Add regression tests that execute markup and scripts in separate scopes,
-  covering saved settings, folder selection, cancellation, retries, and persistence.
-- Keep the upgrade and native-dialog manual check in the validation task above.
+** DONE Verify the simplified source and installer
+- Regular suites: 87 Python tests and 28 JavaScript tests passed.
+- Coverage includes menu contents, installer resource exclusion, old-config
+  handling, repeat export, existing-folder preservation, and settings persistence.
+- Installer packaging checks retain the pre4 settings fix and exclude app scripts.
+- These checks do not replace the manual upgrade/native UI verification above.
 
 * Notes
-** Current handoff behavior
-- Gemini Notebook: export supported sources and annotation sidecars to a flat
-  workspace, open the saved notebook (or ask for a link on first use), and select
-  the exact files in Finder. The user
-  completes Add sources / Upload files or drag-and-drop. No API key, Chrome
-  extension, or Google Drive setup is required for this route.
-- DT4: choose a database/group and index exported files, preserving subfolders.
-  Existing indexed paths are refreshed rather than duplicated. Keep the export
-  folder permanently; it remains the storage location for those linked files.
-- Neither route continuously watches Zotero. Re-export/send to pick up changes.
-- Notebook uploads are snapshots and repeat uploads can duplicate sources.
+** Current workflow
+- Select a Zotero collection and export it to a permanent parent folder.
+- Export Collection copies attachments according to settings; Export Collection +
+  Annotations also generates annotation/child-note documents in the same workspace.
+- Selecting Agentic_AI includes its descendants, not its My-AI parent or siblings.
+- Existing workspaces retain their recorded filename and annotation layout.
+- Re-export updates the same workspace. Ordinary exports do not prune old files.
+- Use another app manually if desired; zpm does not index, upload, synchronize
+  external app records, or create app-specific workspace copies.
+- Hidden =.zpm/= files are exporter bookkeeping; keep them out of manual imports.
 
-** Notebook automation and API migration [2026-09-10 Thu]
-Remembered links are now implemented in the plugin; the CLI independently
-accepts =--notebook-url=. Creation, naming, and uploads remain manual.
-The remaining enhancements are proposals, not implemented in the preview:
+** Upgrading from the experimental previews
+- Existing =Agentic_AI= and =Agentic_AI - NotebookLM= folders remain untouched by
+  installation. Standard exports update only the selected standard workspace.
+- Do not automatically remove old folders: external applications may still rely
+  on them. Any cleanup of those folders/records needs a separate user request.
+- Old notebook-link preferences are left dormant, not used or cleared.
+- Removed CLI flags: =--to=, =--notebook-url=, =--devonthink-group=,
+  =--prepare-only=, and =--profile=.
+- Old standard named projects remain compatible. For a config project containing
+  =export_profile = "notebooklm"=, review its output folder/layout and remove that
+  setting only if standard export is intended. No automatic conversion is done.
 
-- Extend the current one-link-per-collection mapping only if multiple explicit
-  account/provider destinations are needed. Do not infer ownership from titles.
-- Offer browser-assisted creation and naming from the collection. First-time
-  linking to an existing notebook already works.
-- Evaluate the referenced Zotero/Chrome connector before building a new browser
-  bridge. Its documented flow can create a notebook from the home page; upload
-  may still require a genuine user click. Verify collection-based naming and
-  compatibility with zpm's exported annotation sidecars separately.
-- Keep browser automation opt-in. Use the user's normal login, do not extract
-  cookies or replay private Google endpoints, and pause for login/consent.
-  UI changes and partial uploads must produce a clear status and manual fallback.
-- Track acknowledged notebook/source IDs and file hashes where supported. Do
-  not retry an uncertain upload blindly or delete sources to reconcile a batch.
+** Future integration reconsideration (parked)
+The prior automation/API research is historical, not a commitment to restore the
+features. Revisit only with explicit approval and a demonstrable benefit beyond
+opening an app and manually selecting files.
 
-API status checked on 2026-09-10: Google documents preview Gemini Notebook
-Enterprise APIs for notebook creation and file uploads. They require Enterprise
-setup/licensing and Google Cloud authentication; account eligibility is unknown.
-This is not a drop-in use of a normal Gemini API key or an established connection
-to the user's personal notebooks. See the official references below.
+API status was checked on 2026-09-10: Google documented preview Enterprise notebook
+creation/source APIs requiring Enterprise access and Google Cloud authentication.
+That did not establish access for the user's personal Notebook account. Recheck
+eligibility and current support before proposing any implementation. A Gemini model
+API key alone was not the Notebook integration used here.
 
-If a supported Notebook API is available to the user's account and its use is
-approved, replace the desktop/browser handoff with an API adapter. Preserve the
-exported content and Zotero identity mapping, validate provider-specific formats,
-and verify creation, upload completion, retries, and duplicate handling first.
-Do not automatically migrate existing notebooks or remove the manual fallback.
-
-Another no-Notebook-API option is a Drive-synced export folder with sources added
-through Notebook's Google Drive picker. Google documents updates to already
-imported Drive sources. This does not create a notebook or automatically add new
-files from a folder. Verify stable Drive file IDs across zpm's atomic replacements
-before promising ongoing updates; cloud storage requires an explicit choice.
-
-** Proposed MCP-assisted workflow
-Ask a research question, retrieve relevant Zotero papers and annotations, review
-the proposed shortlist, and create/curate a collection with explicit approval.
-Then use zpm to send that collection to Gemini Notebook or DT4.
-
-MCP would help decide what belongs in the collection; zpm handles the exported
-files. The evaluated MCP project does not itself supply our Gemini upload or DT4
-handoff. Generated summaries and citations still need source verification.
+If an integration is later approved, keep its delivery adapter separate from the
+standard exporter, verify end-to-end results/retries, and avoid duplicate folders
+unless a genuinely different export format is explicitly requested.
 
 * Decisions
-- Keep Gemini Notebook and DT4 as two separate destination options.
-- DT4 only; never fall back to DT3.
-- Copy/export outward from Zotero. Do not move, edit, or index Zotero originals.
-- Use the extension-free, manual-final-upload Notebook route for this preview.
-- Keep source preparation separate from delivery so an approved official API
-  can replace the handoff later without rewriting the collection exporter.
-- Implement remembered notebook links first, as approved by the user. No browser
-  extension, API connection, or automatic cloud upload is enabled.
-- Index exported files in DT4; do not silently import copies or prune DT4 records.
-- Keep Zotero MCP as the single NEXT item; do not implement or install it now.
-- Start an MCP pilot read-only. Collection, note, tag, or metadata writes are
-  optional later capabilities, not part of the initial pilot.
-- The user approved committing and pushing this work to the existing GitHub
-  branch. Publishing a release, merging to main, or changing the public update
-  feed is a separate decision. Installation and live workflow checks remain open.
+- Simplify to the standard, app-independent exporter as approved on 2026-09-11.
+- Remove both Gemini Notebook and DT4 feature sets, not just their menu labels.
+- Retain the Choose fix and all core export/safety behavior.
+- Keep existing folders, user preferences, cloud notebooks, and DT4 records intact.
+- Preserve withdrawn code in Git history; do not reset or rewrite branch history.
+- Keep Zotero MCP as the single NEXT proposal; do not install or enable it now.
+- Commit and push the simplified preview to the existing branch. Merging to main,
+  publishing a release, and changing the public update feed remain separate decisions.
 
 * Questions / Ideas
-- Which small collection should be used for the MCP pilot and destination tests?
-- Which AI client should receive Zotero access?
-- Would semantic search add enough value to justify indexing? If so, choose
-  local embeddings or explicitly approve a remote provider first.
-- A local MCP server does not make cloud AI processing local: content sent to
-  a cloud assistant or remote embedding provider leaves the Mac.
-- Later, consider approved collection creation and research-note write-back.
-- Decide later whether to pilot browser-assisted creation; remembered links
-  are the approved first step and are implemented.
-- Check Enterprise API eligibility only if the user wants that route; do not
-  assume the current personal Notebook account includes Enterprise access.
+- Does the standard export/annotation layout meet the user's daily workflow needs?
+- Which pilot collection and AI client should be used if Zotero MCP is approved?
+- Would verified read-only retrieval justify adding MCP without complicating exports?
+- Remote AI clients/embedding providers can receive library content; MCP does not
+  automatically make that processing local.
 
 * References
 - [[file:README.md][Project README and CLI usage]]
 - [[file:zotero-plugin/README.md][Zotero plugin guide]]
 - [[file:CHANGELOG.md][Changelog]]
-- [[file:dist/zpm-zotero-1.1.0pre4.xpi][Zotero preview with remembered links and Settings fix]]
+- [[file:dist/zpm-zotero-1.1.0pre5.xpi][Simplified Zotero preview]]
 - [[file:docs/TESTING.md][Agentic_AI installation and test guide]]
 - [[https://github.com/sbilmis/zotero-project-manager][Project repository]]
-- [[https://github.com/peterdresslar/zotero-gemini-notebook][Reference Zotero/Gemini browser-bridge implementation]]
-- [[https://docs.cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-notebooks][Official Enterprise notebook creation API (preview)]]
-- [[https://docs.cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-notebooks-sources][Official Enterprise source upload API (preview)]]
-- [[https://support.google.com/gemininotebook/answer/16215270?hl=en][Google Notebook source imports and Drive updates]]
+- [[https://github.com/sbilmis/zotero-project-manager/tree/da65ea5ee1606f4026fa5418922b1cce17557135][Historical app-integration implementation before removal]]
+- [[https://docs.cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-notebooks][Previously reviewed Enterprise notebook API]]
+- [[https://docs.cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-notebooks-sources][Previously reviewed Enterprise source API]]
 - [[https://mcpmarket.com/server/zotero-4][Zotero MCP directory listing]]
 - [[https://github.com/cookjohn/zotero-mcp][Zotero MCP source and capabilities]]
-- [[https://github.com/cookjohn/zotero-mcp/releases/tag/v1.5.0][MCP release notes: Zotero 9 compatibility]]
-- [[file:/Users/sbilmis/.emacs.d/snippets/org-mode/tproj][Original tproj notebook snippet]]
+- [[file:/Users/sbilmis/.emacs.d/snippets/org-mode/tproj][Original tproj snippet]]
 
 * Work Log
+** [2026-09-11 Fri] Simplify to standard folder exports
+- User approved removing both app integrations after testing pre4 and finding the
+  extra workspace and manual-upload steps unhelpful; DT4 also reported a script error.
+- Removed app-specific code/resources/options and retained the Settings fix.
+- Added regression checks for one standard workspace, preservation of legacy
+  folders, simplified menus, installer contents, and explicit legacy-config migration.
+- Local suites passed: 87 Python and 28 JavaScript tests. Pre5 requires manual
+  installation; existing folders/app records were not touched.
+- Prior log entries below describe superseded experiments, not current features.
+
 ** [2026-09-11 Fri] Correct the Settings Choose button
 - Confirmed the installed pre3 XPI and inspected Zotero's preference-pane loader.
 - Reproduced the initialization error in a two-scope regression harness, then

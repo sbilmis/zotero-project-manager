@@ -96,9 +96,6 @@ class ExportStats:
     annotation_files: int = 0
     annotations: int = 0
     notes: int = 0
-    notebooklm_sources: int = 0
-    notebooklm_source_limit_exceeded: bool = False
-    delivery_files: tuple[str, ...] = ()
     changes: tuple["SyncChange", ...] = ()
 
 

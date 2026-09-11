@@ -21,7 +21,6 @@ FILES = (
     "preferences.js",
     "preferences.css",
     "native-exporter.js",
-    "destinations.js",
     "zpm.js",
     "locale/en-US/zpm.ftl",
 )
@@ -59,11 +58,6 @@ def build(*, development: bool = False) -> Path:
         for relative in FILES:
             source = PLUGIN / relative
             info = zipfile.ZipInfo(relative, date_time=(2026, 1, 1, 0, 0, 0))
-            info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = 0o644 << 16
-            archive.writestr(info, source.read_bytes())
-        for source in sorted((ROOT / "src/zotero_project_manager/resources").glob("*.applescript")):
-            info = zipfile.ZipInfo(f"scripts/{source.name}", date_time=(2026, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o644 << 16
             archive.writestr(info, source.read_bytes())

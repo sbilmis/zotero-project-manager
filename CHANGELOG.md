@@ -2,6 +2,20 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 1.1.0.dev5 — simplified local preview
+
+- Remove experimental Gemini Notebook/DEVONthink menu actions, remembered-link
+  UI, desktop handoff scripts, destination CLI options, and the Notebook export profile.
+- Keep standard collection exports, notes/annotations, non-PDF attachments,
+  filename/layout settings, incremental updates, and concurrent-export protection.
+- Preserve the pre4 Settings initialization and Choose-button fixes.
+- Leave existing exported folders, Zotero preferences/originals, notebooks, and
+  DT4 records untouched; integration source remains recoverable in Git history.
+- Reject saved non-standard CLI project profiles with an explicit migration
+  message instead of silently changing the export destination or layout.
+- Add standard-menu, installer-content, legacy-config, and existing-folder
+  preservation tests. Publish no release or update-feed changes in this preview.
+
 ## 1.1.0.dev4 — local preview
 
 - Fix the settings pane's startup handler to resolve its isolated Zotero 9 scope,

@@ -13,11 +13,6 @@ from typing import Any
 
 from .annotations import DEFAULT_ANNOTATION_LAYOUT, validate_annotation_layout
 from .filenames import DEFAULT_FILENAME_TEMPLATE, validate_filename_template
-from .gemini_notebook import (
-    NOTEBOOKLM_PROFILE,
-    STANDARD_PROFILE,
-    validate_export_profile,
-)
 
 _PROJECT_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 
@@ -41,7 +36,6 @@ class ProjectConfig:
     annotations: bool = False
     annotation_layout: str = DEFAULT_ANNOTATION_LAYOUT
     filename_template: str = DEFAULT_FILENAME_TEMPLATE
-    export_profile: str = STANDARD_PROFILE
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,44 +89,39 @@ def load_config(path: Path | None = None) -> AppConfig:
         if not isinstance(values, dict):
             raise ConfigError(f"Project {name!r} must be a TOML table")
         _validate_project_name(name)
+        # Do not silently redirect a project saved by an app-specific preview.
+        # Legacy standard projects remain compatible; no file is rewritten here.
+        legacy_profile = values.get("export_profile")
+        if legacy_profile not in (None, "standard"):
+            raise ConfigError(
+                f"Project {name!r} uses removed export profile {legacy_profile!r}. "
+                f"Review its output directory and layout in {config_path}, then "
+                "remove export_profile to explicitly switch to standard folder export. "
+                "Existing exported folders are unchanged."
+            )
         selectors = values.get("collections")
         if not isinstance(selectors, list) or not selectors or not all(
             isinstance(selector, str) and selector for selector in selectors
         ):
             raise ConfigError(f"Project {name!r} requires a non-empty string collection list")
-        profile = _export_profile(
-            values.get("export_profile"), context=f"Project {name!r}"
-        )
-        include_non_pdf = _boolean(values, "include_non_pdf", False, name)
-        annotations = _boolean(values, "annotations", False, name)
-        annotation_layout = _annotation_layout(
-            values.get("annotation_layout", payload.get("annotation_layout")),
-            context=f"Project {name!r}",
-        )
         projects[name] = ProjectConfig(
             name=name,
             collections=tuple(selectors),
             output_dir=_optional_path(values.get("output_dir"), config_path),
             recursive=_boolean(values, "recursive", True, name),
-            include_non_pdf=(
-                True if profile == NOTEBOOKLM_PROFILE else include_non_pdf
-            ),
+            include_non_pdf=_boolean(values, "include_non_pdf", False, name),
             prune=_boolean(values, "prune", False, name),
             verify=_boolean(values, "verify", False, name),
             metadata=_boolean(values, "metadata", True, name),
-            annotations=(
-                True if profile == NOTEBOOKLM_PROFILE else annotations
-            ),
-            annotation_layout=(
-                "sidecar"
-                if profile == NOTEBOOKLM_PROFILE
-                else annotation_layout
+            annotations=_boolean(values, "annotations", False, name),
+            annotation_layout=_annotation_layout(
+                values.get("annotation_layout", payload.get("annotation_layout")),
+                context=f"Project {name!r}",
             ),
             filename_template=_filename_template(
                 values.get("filename_template", payload.get("filename_template")),
                 context=f"Project {name!r}",
             ),
-            export_profile=profile,
         )
     return AppConfig(
         path=config_path,
@@ -185,7 +174,6 @@ def save_config(config: AppConfig) -> None:
                 f"annotations = {str(project.annotations).lower()}",
                 f"annotation_layout = {_quote(project.annotation_layout)}",
                 f"filename_template = {_quote(project.filename_template)}",
-                f"export_profile = {_quote(project.export_profile)}",
             ]
         )
     content = "\n".join(lines) + "\n"
@@ -216,7 +204,6 @@ def make_project(
     annotations: bool = False,
     annotation_layout: str = DEFAULT_ANNOTATION_LAYOUT,
     filename_template: str = DEFAULT_FILENAME_TEMPLATE,
-    export_profile: str = STANDARD_PROFILE,
 ) -> ProjectConfig:
     """Validate and construct a named project."""
 
@@ -226,7 +213,6 @@ def make_project(
     try:
         validated_template = validate_filename_template(filename_template)
         validated_layout = validate_annotation_layout(annotation_layout)
-        validated_profile = validate_export_profile(export_profile)
     except ValueError as exc:
         raise ConfigError(str(exc)) from exc
     return ProjectConfig(
@@ -234,16 +220,13 @@ def make_project(
         collections=tuple(collections),
         output_dir=output_dir.expanduser().resolve() if output_dir else None,
         recursive=recursive,
-        include_non_pdf=(include_non_pdf or validated_profile == NOTEBOOKLM_PROFILE),
+        include_non_pdf=include_non_pdf,
         prune=prune,
         verify=verify,
         metadata=metadata,
-        annotations=(annotations or validated_profile == NOTEBOOKLM_PROFILE),
-        annotation_layout=(
-            "sidecar" if validated_profile == NOTEBOOKLM_PROFILE else validated_layout
-        ),
+        annotations=annotations,
+        annotation_layout=validated_layout,
         filename_template=validated_template,
-        export_profile=validated_profile,
     )
 
 
@@ -291,17 +274,6 @@ def _annotation_layout(value: Any, *, context: str) -> str:
         raise ConfigError(f"{context} annotation_layout must be a non-empty string")
     try:
         return validate_annotation_layout(value)
-    except ValueError as exc:
-        raise ConfigError(f"{context}: {exc}") from exc
-
-
-def _export_profile(value: Any, *, context: str) -> str:
-    if value is None:
-        return STANDARD_PROFILE
-    if not isinstance(value, str) or not value:
-        raise ConfigError(f"{context} export_profile must be a non-empty string")
-    try:
-        return validate_export_profile(value)
     except ValueError as exc:
         raise ConfigError(f"{context}: {exc}") from exc
 

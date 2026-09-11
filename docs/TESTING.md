@@ -1,118 +1,91 @@
-# Test remembered Notebook links with Agentic_AI
+# Test the simplified exporter with Agentic_AI
 
-This guide targets Zotero plugin **1.1.0pre4**. The feature remembers a notebook
-link; it does not create/name notebooks, log into Google, or upload automatically.
-The Python CLI still uses its explicit `--notebook-url` argument.
+This guide targets Zotero plugin **1.1.0pre5**. It exports to one standard workspace
+per collection, with no Gemini Notebook or DEVONthink integration. Existing export
+folders are not removed by upgrading.
 
 ## 1. Install the preview
 
-1. Use the locally built `dist/zpm-zotero-1.1.0pre4.xpi`. If you downloaded the
-   source checkout instead, build it from the repository root with:
+1. Use `dist/zpm-zotero-1.1.0pre5.xpi`. To build it from the source checkout:
 
    ```bash
    python3 scripts/build_zotero_plugin.py --development
    ```
 
-2. In Zotero, open **Tools → Plugins → gear → Install Plugin From File…**, select
-   the XPI, and restart Zotero if requested.
-3. Confirm **Zotero Project Manager 1.1.0pre4** is listed and enabled.
-4. Right-click **My-AI → Agentic_AI**, then choose **Export with zpm → Settings…**.
-   Set a permanent output parent folder such as a ResearchProjects folder in your
-   Documents. Do not use Zotero's storage folder or a temporary directory.
-5. Check that a few PDFs in this collection open locally. Enable **Include other
-   attached files** if you also want non-PDF attachments delivered to DT4.
+2. In Zotero, open **Tools → Plugins → gear → Install Plugin From File…** and
+   select the XPI. Install over the existing plugin; no uninstall is needed.
+3. Restart Zotero and confirm **Zotero Project Manager 1.1.0pre5** is enabled.
+4. Right-click **My-AI → Agentic_AI → Export with zpm**. Expect exactly:
 
-Only Agentic_AI and its descendants are exported when you select Agentic_AI.
-Selecting My-AI instead exports that parent and all its descendants.
+   - **Export Collection**
+   - **Export Collection + Annotations**
+   - **Settings…**
 
-### Verify the Settings / Choose fix before exporting
+   The Gemini/DT4 Send actions and notebook-link setup must be gone.
 
-1. Close and reopen Zotero Settings after upgrading from pre3. Your previously
-   saved export folder should now appear instead of an unexpectedly blank field.
-2. Click **Choose…**. A native folder-selection dialog should appear attached to
-   the Settings window; it is not a separate Finder window.
-3. Cancel once. The saved path must remain unchanged.
-4. Click **Choose…** again, select a permanent export folder, and confirm.
-   Expect the chosen path and **Export folder saved.** below it.
-5. Close and reopen Settings, then restart Zotero and check again. The chosen
-   path should persist. No export or external-app handoff occurs during these steps.
-6. Optional: type an absolute folder path and press Tab. Confirm the saved status
-   and persistence, then restore your intended folder before running any exports.
+## 2. Confirm Settings / Choose still works
 
-If the picker fails, record the visible error below the folder field. The button
-should become available again for a retry. macOS Finder Automation permission is
-for the later file-selection handoff, not for this native folder picker.
+1. Open **Settings…**. Your saved export parent folder should appear.
+2. Click **Choose…**. A native folder-selection dialog should open attached to
+   Settings. Cancel once and confirm the path stays unchanged.
+3. Select your intended permanent parent folder, such as your existing
+   `/Users/sbilmis/scratch/zpm_test`. Expect **Export folder saved.**
+4. Close and reopen Settings to verify the path persists. Do not use Zotero's
+   data/storage directory as the export parent.
+5. Leave layout and filename choices unchanged for an existing workspace; those
+   workspaces retain their recorded settings. Test different layouts in a new
+   parent folder only if you deliberately want another workspace.
 
-## 2. Save the notebook once
+## 3. Export the selected collection
 
-1. In your usual browser, sign into the intended Google account and open/create
-   the notebook **Agentic_AI**. Copy its full address from the address bar.
-2. In Zotero, right-click **Agentic_AI → Export with zpm → Set Gemini Notebook
-   Link…**.
-3. Paste the notebook URL and click **OK**. Expect **Link saved for Agentic_AI**.
-   Saving the link should not export files or open apps.
+1. Confirm a few PDFs inside **Agentic_AI** open locally in Zotero.
+2. Right-click **Agentic_AI → Export with zpm → Export Collection + Annotations**.
+3. Expect an **Export complete** summary and the path
+   `/Users/sbilmis/scratch/zpm_test/Agentic_AI` if you selected that parent folder.
+4. Open that folder in Finder yourself. Check PDFs, generated annotation/child-note
+   Markdown, and any selected non-PDF attachments. Their placement follows the
+   workspace layout: `Annotations/`, sidecars, or per-paper bundles.
+5. No browser, Notebook, DT4, AppleScript prompt, or automatic upload should occur.
+   No new `Agentic_AI - NotebookLM` workspace should be created.
 
-The URL must point to an actual notebook under notebook.google.com or
-notebooklm.google.com, not the site's home page or a generic Gemini chat.
-Account selectors present in the URL are kept, but browser account selection
-still matters. If Google says access denied, use the correct account or replace
-the link; the plugin does not create a replacement notebook.
+Selecting Agentic_AI includes its descendants, not its My-AI parent or siblings.
+**Export Collection** uses the same workspace without generating new annotation
+documents; previously exported files can remain, since ordinary exports do not prune.
 
-## 3. Test the send
+## 4. Check repeat export and existing-folder preservation
 
-1. Right-click **Agentic_AI → Export with zpm → Send to Gemini Notebook…**.
-2. After export, dismiss **Ready for Gemini Notebook**. There should be no
-   notebook-link prompt now.
-3. Confirm the browser opens your saved notebook directly, not the home page.
-4. Finder should select the current prepared source files in the separate
-   **Agentic_AI - NotebookLM** workspace. If macOS requests permission, allow
-   Zotero to control Finder.
-5. In the notebook, choose **Add sources** and drag the selected files into the
-   upload area, or choose **Upload files**. Include the annotation Markdown files
-   and collection overview as desired; exclude the hidden `.zpm` directory.
-6. Wait for processing and check the notebook's Sources panel yourself.
+1. Re-export Agentic_AI with the same action. Unchanged PDFs should be counted as
+   unchanged, with no app-specific duplicate workspace created.
+2. If an old `Agentic_AI - NotebookLM` folder already exists, it will still exist.
+   The upgrade and standard export do not delete or update it; that is intentional.
+3. Restart Zotero and confirm Settings and the simplified menu remain correct.
+4. If using the files elsewhere, open that app yourself and select only the files
+   you want. Keep hidden `.zpm/` bookkeeping out of imports/uploads. Choose file
+   types the destination accepts. zpm does not manage external copies or sources.
 
-This is a real Google upload if you perform step 5. For a routing-only test,
-stop at step 4; nothing will have been uploaded by zpm.
+No cleanup of old exported folders, Google notebooks, or DT4 records is performed.
+Old notebook-link preferences stay unused; there is no link-setting interface.
 
-## 4. Test persistence and editing without uploading again
+## Optional CLI checks
 
-1. Quit and reopen Zotero. Send Agentic_AI again.
-   **Expected:** the same notebook opens with no link prompt. Do not re-upload
-   the files just to test persistence; repeat uploads can duplicate sources.
-2. Open **Set Gemini Notebook Link…** again.
-   **Expected:** the current link is prefilled. Click **Cancel**.
-3. Optional: paste another notebook URL you own and click OK, then Send again.
-   **Expected:** only Agentic_AI's destination changes. Restore its original URL
-   afterward.
-4. Try the Notebook home-page URL in the link dialog.
-   **Expected:** a validation error, with the previous saved link unchanged.
-   Click Cancel to leave it as it was.
-5. To test forgetting: open the dialog, empty the field, and click OK.
-   **Expected:** the link is cleared, but no notebook or sources are deleted.
-   On the next Send, the setup prompt returns. Paste the original link to save
-   it again.
+The installed Homebrew/pipx CLI does not change when the plugin is upgraded.
+Use the checkout's environment to test this source version:
 
-On an unlinked collection, blank input in the first-send prompt opens the Notebook
-home page without remembering it. Cancel stops the handoff; already exported
-files remain. Links are local to this Zotero profile, not synced between Macs.
-They are keyed by library and collection identity, not the collection's title.
+```bash
+.venv/bin/python -m zotero_project_manager export --help
+.venv/bin/python -m zotero_project_manager export "My-AI/Agentic_AI" --output /Users/sbilmis/scratch/zpm_test --annotations --dry-run
+```
 
-## 5. Check DT4 remains independent
-
-1. Open **DEVONthink 4** and a writable test database.
-2. Right-click Agentic_AI in Zotero → **Export with zpm → Send to DEVONthink 4…**.
-3. Select your test group. Approve macOS automation permission if requested.
-4. Confirm the Agentic_AI group contains links to files under the permanent export
-   folder. The saved Google notebook URL is irrelevant to this action.
-5. Send again to the same database and confirm existing indexed paths are reused.
-
-DT3 must never be targeted. Keep the export folder: DT4 indexes those copies.
-Zotero originals are not modified, and zpm does not prune existing DT4 records.
+Use the collection's exact path or key from `zpm list` if its selector differs.
+App-specific options (`--to`, `--notebook-url`, `--devonthink-group`,
+`--prepare-only`, and `--profile`) are no longer accepted. A named project saved
+with `export_profile = "notebooklm"` reports a migration error without exporting.
+To deliberately use standard export, review that project's output folder/layout
+and remove the `export_profile` setting in its TOML config. Standard projects
+from older previews continue to work.
 
 ## Reporting a problem
 
-Record the plugin version, collection name, action, exact error, and whether the
-browser, Finder, or DT4 opened. If a notebook/source is private, redact its URL
-and document contents from public issues. Note separately whether the export
-completed and whether the app handoff succeeded.
+Record the plugin version, selected collection, action, exact error, output path,
+and whether the issue occurs in Settings or during export. Redact private document
+contents and paths when reporting publicly.

@@ -1,10 +1,32 @@
 from typer.testing import CliRunner
+import pytest
 
 from zotero_project_manager.cli import app
 from zotero_project_manager.config import AppConfig, save_config
 
 
 runner = CliRunner()
+
+
+@pytest.mark.parametrize("option", [
+    ["--to", "devonthink"], ["--to", "gemini-notebook"],
+    ["--notebook-url", "https://example.com"], ["--devonthink-group", "group"],
+    ["--prepare-only"], ["--profile", "notebooklm"],
+])
+def test_removed_app_options_are_rejected_before_export(tmp_path, option):
+    output = tmp_path / "exports"
+    result = runner.invoke(app, ["export", "My-AI", "--output", str(output), *option])
+    assert result.exit_code == 2, result.output
+    assert "No such option" in result.output
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("command", [["export"], ["status"], ["project", "add"], ["plugin-export"]])
+def test_cli_help_has_no_app_options(command):
+    result = runner.invoke(app, [*command, "--help"], color=False)
+    assert result.exit_code == 0, result.output
+    for removed in ["--profile", "--to ", "--notebook-url", "--devonthink-group", "--prepare-only"]:
+        assert removed not in result.output
 
 
 def test_list_command(zotero_fixture: object) -> None:
@@ -64,34 +86,6 @@ def test_export_cli_supports_annotations_and_filename_template(
         / "Books"
         / "2021 - Chollet - Deep Learning with Python.annotations.md"
     ).is_file()
-
-
-def test_export_cli_supports_notebooklm_profile(
-    tmp_path: object, zotero_fixture: object
-) -> None:
-    fixture = zotero_fixture
-    output = tmp_path / "out"  # type: ignore[operator]
-    result = runner.invoke(
-        app,
-        [
-            "export",
-            "My-AI",
-            "--database",
-            str(fixture.database),  # type: ignore[attr-defined]
-            "--output",
-            str(output),
-            "--profile",
-            "notebooklm",
-        ],
-    )
-    assert result.exit_code == 0, result.output
-    workspace = output / "My-AI - NotebookLM"
-    assert (workspace / "collection-overview.md").is_file()
-    assert (workspace / "Chollet - 2021 - Deep Learning with Python.pdf").is_file()
-    assert (
-        workspace / "Chollet - 2021 - Deep Learning with Python.annotations.md"
-    ).is_file()
-    assert "Gemini Notebook-ready sources: 5" in result.output
 
 
 def test_status_reports_without_writing(tmp_path: object, zotero_fixture: object) -> None:
@@ -185,45 +179,6 @@ def test_named_project_sync_uses_saved_settings(tmp_path: object, zotero_fixture
     synced = runner.invoke(app, ["--config", str(path), "sync", "ai"])
     assert synced.exit_code == 0, synced.output
     assert (output / "My-AI" / ".zpm" / "manifest.json").is_file()
-
-
-def test_named_project_sync_supports_notebooklm_profile(
-    tmp_path: object, zotero_fixture: object
-) -> None:
-    fixture = zotero_fixture
-    path = tmp_path / "config.toml"  # type: ignore[operator]
-    output = tmp_path / "exports"  # type: ignore[operator]
-    save_config(
-        AppConfig(
-            path=path,
-            zotero_dir=fixture.data_dir,  # type: ignore[attr-defined]
-            output_dir=output,
-        )
-    )
-    added = runner.invoke(
-        app,
-        [
-            "--config",
-            str(path),
-            "project",
-            "add",
-            "ai-notebook",
-            "My-AI",
-            "--profile",
-            "notebooklm",
-        ],
-    )
-    assert added.exit_code == 0, added.output
-    shown = runner.invoke(
-        app, ["--config", str(path), "project", "show", "ai-notebook"]
-    )
-    assert shown.exit_code == 0, shown.output
-    assert "Export profile: notebooklm" in shown.output
-    assert "Annotation layout: sidecar" in shown.output
-
-    synced = runner.invoke(app, ["--config", str(path), "sync", "ai-notebook"])
-    assert synced.exit_code == 0, synced.output
-    assert (output / "My-AI - NotebookLM" / "collection-overview.md").is_file()
 
 
 def test_direct_export_uses_configured_defaults(tmp_path: object, zotero_fixture: object) -> None:
