@@ -2,6 +2,24 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 1.1.0 — 2026-09-11
+
+Maintenance release with the same standard export feature set as public 1.0.0.
+
+- Fix Settings initialization in Zotero 9 so saved values and controls load correctly.
+- Fix the Choose folder button, attach its dialog to Settings, tolerate stale
+  starting paths, preserve Cancel, and show errors while allowing retries.
+- Prevent concurrent plugin exports from writing the same workspace at once.
+- Retain PDF/attachment exports, annotations and child notes, filename/layout
+  settings, incremental updates, and the existing read-only safeguards.
+- Add regression tests, a focused installation/test guide, and project notes.
+- Upgrade 1.0.0 and 1.1.0 previews through the standard plugin update feed.
+- The withdrawn Gemini Notebook/DEVONthink preview integrations are not included;
+  their existing exported folders and app records are not deleted or migrated.
+- For CLI preview users only, require explicit migration of saved non-standard
+  project profiles instead of silently changing their output behavior.
+- The user confirmed the simplified pre5 build works and its menu is correct.
+
 ## 1.1.0.dev5 — simplified local preview
 
 - Remove experimental Gemini Notebook/DEVONthink menu actions, remembered-link

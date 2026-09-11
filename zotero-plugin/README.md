@@ -22,7 +22,7 @@ Open **Settings…** from a collection's **Export with zpm** menu, or open Zoter
 The first export prompts for a destination if no valid default exists. Later exports
 update the collection's existing workspace without asking again.
 
-Preview **1.1.0pre5** retains the settings initialization fix: the saved folder appears on
+Version **1.1.0** includes the settings initialization fix: the saved folder appears on
 opening the pane, and **Choose…** opens a native folder-selection dialog attached
 to Settings. Cancel preserves the current folder. You can also type an absolute
 folder path and leave the field to save it; the status below confirms the change.
@@ -36,7 +36,7 @@ workspaces retain their recorded layout and filename settings.
 
 Use the exported files manually in an app of your choice. The experimental
 Gemini Notebook and DEVONthink actions, link setup, and Notebook-specific export
-format have been removed in pre5. Existing exported folders, saved preferences,
+format are not included in the stable release. Existing exported folders, saved preferences,
 notebooks, and DT4 records are left untouched. Old notebook links are unused.
 
 See [the Agentic_AI test guide](../docs/TESTING.md) for installation and checks.

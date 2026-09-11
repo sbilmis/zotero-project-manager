@@ -15,9 +15,11 @@ steps in the plugin. Users choose how to use exported files in other apps.
 
 * Context
 - Main project folder: =/Users/sbilmis/developer/projects/zotero-project-manager=.
-- Current preview: Zotero =1.1.0pre5=; source CLI =1.1.0.dev5=.
-- The installed plugin was confirmed at =1.1.0pre4= before this cleanup. Upgrading
-  to pre5 remains manual; editing the checkout does not update the Homebrew CLI.
+- Stable release target: Zotero and source CLI =1.1.0=.
+- Installed plugin =1.1.0pre5= was confirmed locally. The user reports it works
+  and supplied a screenshot confirming the simplified menu on 2026-09-11.
+- The user approved a public maintenance release and plugin update-feed update.
+  Editing the checkout or publishing does not itself upgrade local installations.
 - On 2026-09-11 the user rejected the extra Gemini/DT4 workflow complexity and
   approved removing both integrations, their CLI options, and the Notebook profile.
 - Existing exported folders, notebooks, DT4 records, and Zotero originals are
@@ -44,15 +46,17 @@ This is the next planned item, not authorization to install or enable it now.
 Acceptance: useful, verifiable retrieval without modifying Zotero or disrupting
 exports. Write access, embeddings, or remote processing require a separate decision.
 
-** TODO Upgrade and validate the simplified preview inside Zotero
-- [ ] Install [[file:dist/zpm-zotero-1.1.0pre5.xpi][zpm-zotero-1.1.0pre5.xpi]] over pre4 and restart.
-- [ ] Confirm the menu has only Export Collection, Export Collection + Annotations,
-  and Settings; no Gemini/DT4 Send commands or notebook-link setup.
-- [ ] Verify Settings loads saved values; Choose, cancellation, and saving work.
-- [ ] Follow [[file:docs/TESTING.md][the Agentic_AI guide]] to export and repeat-export
-  the same standard workspace with local PDFs and annotations/child notes.
-- [ ] Confirm old Notebook export folders are unchanged and no new ones appear.
-- [ ] Confirm there are no external-app launches or AppleScript handoff errors.
+** DONE User validation of the simplified preview
+- Installed pre5 confirmed; user reports the build works.
+- Screenshot confirms only Export Collection, Export Collection + Annotations,
+  and Settings, with no Gemini/DT4 options.
+- Detailed regression scenarios remain available in [[file:docs/TESTING.md][the test guide]].
+
+** TODO Confirm the stable update in the user's Zotero installation
+- [ ] Use Tools -> Plugins -> gear -> Check for Updates to upgrade pre5 to 1.1.0.
+- [ ] Confirm the stable version and the same simplified menu/settings behavior.
+- [ ] Refresh Add-on Market after its catalog catches up; do not reinstall an
+  older version if the market still lists 1.0.0.
 
 ** DONE Remove experimental app integrations
 - Removed Gemini/DT4 commands, remembered-link UI, AppleScript resources, delivery
@@ -122,8 +126,11 @@ unless a genuinely different export format is explicitly requested.
 - Keep existing folders, user preferences, cloud notebooks, and DT4 records intact.
 - Preserve withdrawn code in Git history; do not reset or rewrite branch history.
 - Keep Zotero MCP as the single NEXT proposal; do not install or enable it now.
-- Commit and push the simplified preview to the existing branch. Merging to main,
-  publishing a release, and changing the public update feed remain separate decisions.
+- User approved merging the tested maintenance release to main, publishing the
+  stable GitHub release, and updating the public plugin feed on 2026-09-11.
+- Use 1.1.0 so both public 1.0.0 and 1.1.0 preview installations can upgrade.
+- Publishing the release runs the existing PyPI workflow. Do not alter repository
+  protections or the third-party Add-on Market registry/refresh configuration.
 
 * Questions / Ideas
 - Does the standard export/annotation layout meet the user's daily workflow needs?
@@ -136,7 +143,8 @@ unless a genuinely different export format is explicitly requested.
 - [[file:README.md][Project README and CLI usage]]
 - [[file:zotero-plugin/README.md][Zotero plugin guide]]
 - [[file:CHANGELOG.md][Changelog]]
-- [[file:dist/zpm-zotero-1.1.0pre5.xpi][Simplified Zotero preview]]
+- [[file:dist/zpm-zotero-1.1.0.xpi][Stable Zotero installer]]
+- [[https://github.com/sbilmis/zotero-project-manager/releases/tag/v1.1.0][Stable release page]]
 - [[file:docs/TESTING.md][Agentic_AI installation and test guide]]
 - [[https://github.com/sbilmis/zotero-project-manager][Project repository]]
 - [[https://github.com/sbilmis/zotero-project-manager/tree/da65ea5ee1606f4026fa5418922b1cce17557135][Historical app-integration implementation before removal]]
@@ -147,6 +155,13 @@ unless a genuinely different export format is explicitly requested.
 - [[file:/Users/sbilmis/.emacs.d/snippets/org-mode/tproj][Original tproj snippet]]
 
 * Work Log
+** [2026-09-11 Fri] Prepare the stable maintenance release after user validation
+- User confirmed pre5 works and the Gemini/DT4 options are gone.
+- Prepared version 1.1.0 with unchanged tested runtime code, stable release notes,
+  update-feed hash verification, and instructions for public updates.
+- User authorized publication. Local upgrade and Add-on Market cache refresh are
+  separate from GitHub publication and remain checks in the test guide.
+
 ** [2026-09-11 Fri] Simplify to standard folder exports
 - User approved removing both app integrations after testing pre4 and finding the
   extra workspace and manual-upload steps unhelpful; DT4 also reported a script error.

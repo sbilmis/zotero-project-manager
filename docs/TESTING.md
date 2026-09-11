@@ -1,20 +1,23 @@
 # Test the simplified exporter with Agentic_AI
 
-This guide targets Zotero plugin **1.1.0pre5**. It exports to one standard workspace
+This guide targets Zotero plugin **1.1.0**. It exports to one standard workspace
 per collection, with no Gemini Notebook or DEVONthink integration. Existing export
 folders are not removed by upgrading.
 
-## 1. Install the preview
+## 1. Install or update the stable release
 
-1. Use `dist/zpm-zotero-1.1.0pre5.xpi`. To build it from the source checkout:
+1. Existing users can run **Tools → Plugins → gear → Check for Updates**.
+   For a manual install, download `zpm-zotero-1.1.0.xpi` from the
+   [1.1.0 release](https://github.com/sbilmis/zotero-project-manager/releases/tag/v1.1.0).
+   To build it from the release source checkout:
 
    ```bash
-   python3 scripts/build_zotero_plugin.py --development
+   python3 scripts/build_zotero_plugin.py
    ```
 
 2. In Zotero, open **Tools → Plugins → gear → Install Plugin From File…** and
    select the XPI. Install over the existing plugin; no uninstall is needed.
-3. Restart Zotero and confirm **Zotero Project Manager 1.1.0pre5** is enabled.
+3. Restart Zotero if requested and confirm **Zotero Project Manager 1.1.0** is enabled.
 4. Right-click **My-AI → Agentic_AI → Export with zpm**. Expect exactly:
 
    - **Export Collection**
@@ -22,6 +25,10 @@ folders are not removed by upgrading.
    - **Settings…**
 
    The Gemini/DT4 Send actions and notebook-link setup must be gone.
+
+Add-on Market may temporarily show 1.0.0 until its catalog/mirror refreshes. Do
+not use Reinstall while it lists the older version; use Zotero's Check for Updates
+or the direct release XPI instead. No uninstall is needed, including from pre5.
 
 ## 2. Confirm Settings / Choose still works
 

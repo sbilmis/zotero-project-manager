@@ -66,8 +66,9 @@ uploading, or separate Notebook export format. The hidden `.zpm/` directory is
 bookkeeping, not material to upload or import. You choose the files and compatible
 types in the destination app.
 
-Preview **1.1.0pre5** removes the experimental Gemini Notebook/DT4 integrations
-while retaining standard exports, naming/layout settings, and the Choose fix.
+Stable **1.1.0** keeps the public 1.0.0 feature set and fixes Settings/Choose while
+adding concurrent-export protection. The experimental Gemini Notebook/DT4 preview
+integrations are not included; standard exports and naming/layout settings remain.
 Existing export folders (including old ` - NotebookLM` folders), Google notebooks,
 DT4 records, and Zotero originals are not deleted or migrated. Old notebook-link
 preferences are left unused; the simplified plugin does not read or clear them.
@@ -209,17 +210,18 @@ python -m venv .venv
 node --test zotero-plugin/tests/*.test.cjs
 ```
 
-Build the local preview XPI with:
+Build the release XPI and verify its update-feed entry with:
 
 ```bash
-.venv/bin/python scripts/build_zotero_plugin.py --development
+.venv/bin/python scripts/build_zotero_plugin.py
 ```
 
-Install `dist/zpm-zotero-1.1.0pre5.xpi` using Zotero's **Tools → Plugins → gear →
-Install Plugin From File…**. This preview is not yet on the public update feed.
+Install `dist/zpm-zotero-1.1.0.xpi` using Zotero's **Tools → Plugins → gear →
+Install Plugin From File…**, or use the XPI from the matching GitHub release.
 The installed Homebrew/pipx release does not change when this checkout changes;
 use `.venv/bin/python -m zotero_project_manager` to run the CLI from this checkout.
-Release builds omit `--development` and continue to verify update-feed hashes.
+For unpublished development versions only, pass `--development` to build without
+a published feed entry. Release builds and CI verify the exact update-feed hash.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [PUBLISHING.md](PUBLISHING.md), the
 [plugin guide](zotero-plugin/README.md), and [CHANGELOG.md](CHANGELOG.md) for focused
