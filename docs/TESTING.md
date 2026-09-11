@@ -1,12 +1,12 @@
 # Test remembered Notebook links with Agentic_AI
 
-This guide targets Zotero plugin **1.1.0pre3**. The feature remembers a notebook
+This guide targets Zotero plugin **1.1.0pre4**. The feature remembers a notebook
 link; it does not create/name notebooks, log into Google, or upload automatically.
 The Python CLI still uses its explicit `--notebook-url` argument.
 
 ## 1. Install the preview
 
-1. Use the locally built `dist/zpm-zotero-1.1.0pre3.xpi`. If you downloaded the
+1. Use the locally built `dist/zpm-zotero-1.1.0pre4.xpi`. If you downloaded the
    source checkout instead, build it from the repository root with:
 
    ```bash
@@ -15,7 +15,7 @@ The Python CLI still uses its explicit `--notebook-url` argument.
 
 2. In Zotero, open **Tools → Plugins → gear → Install Plugin From File…**, select
    the XPI, and restart Zotero if requested.
-3. Confirm **Zotero Project Manager 1.1.0pre3** is listed and enabled.
+3. Confirm **Zotero Project Manager 1.1.0pre4** is listed and enabled.
 4. Right-click **My-AI → Agentic_AI**, then choose **Export with zpm → Settings…**.
    Set a permanent output parent folder such as a ResearchProjects folder in your
    Documents. Do not use Zotero's storage folder or a temporary directory.
@@ -24,6 +24,24 @@ The Python CLI still uses its explicit `--notebook-url` argument.
 
 Only Agentic_AI and its descendants are exported when you select Agentic_AI.
 Selecting My-AI instead exports that parent and all its descendants.
+
+### Verify the Settings / Choose fix before exporting
+
+1. Close and reopen Zotero Settings after upgrading from pre3. Your previously
+   saved export folder should now appear instead of an unexpectedly blank field.
+2. Click **Choose…**. A native folder-selection dialog should appear attached to
+   the Settings window; it is not a separate Finder window.
+3. Cancel once. The saved path must remain unchanged.
+4. Click **Choose…** again, select a permanent export folder, and confirm.
+   Expect the chosen path and **Export folder saved.** below it.
+5. Close and reopen Settings, then restart Zotero and check again. The chosen
+   path should persist. No export or external-app handoff occurs during these steps.
+6. Optional: type an absolute folder path and press Tab. Confirm the saved status
+   and persistence, then restore your intended folder before running any exports.
+
+If the picker fails, record the visible error below the folder field. The button
+should become available again for a retry. macOS Finder Automation permission is
+for the later file-selection handoff, not for this native folder picker.
 
 ## 2. Save the notebook once
 

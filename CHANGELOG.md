@@ -2,6 +2,16 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 1.1.0.dev4 — local preview
+
+- Fix the settings pane's startup handler to resolve its isolated Zotero 9 scope,
+  restoring saved values and event handlers for Choose and the other settings.
+- Attach the folder picker to Settings, tolerate stale starting paths, prevent
+  duplicate dialogs, and display picker errors with retry support.
+- Preserve the saved folder on cancellation and allow initialization retries.
+- Add settings-scope and picker regression tests plus a focused manual test guide.
+- Package Zotero preview 1.1.0pre4; CLI behavior and the public update feed are unchanged.
+
 ## 1.1.0.dev3 — local preview
 
 - Remember a Gemini Notebook URL per Zotero library/collection key, surviving

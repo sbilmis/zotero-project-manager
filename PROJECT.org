@@ -18,9 +18,10 @@ as a separate next step for finding and organizing material before export.
 - Main project folder: =/Users/sbilmis/developer/projects/zotero-project-manager=.
 - The corrected checkout already contained a Notebook export profile; the new
   work adds actual desktop handoffs to the plugin and Python CLI.
-- The local preview is =1.1.0pre3= for Zotero and =1.1.0.dev3= for the CLI.
-- At the last installation check, Zotero and the Homebrew CLI were still on
-  =1.0.0=. The preview was built, but installation was not performed in this task.
+- The local preview is =1.1.0pre4= for Zotero and =1.1.0.dev4= for the CLI.
+- On 2026-09-11, the installed Zotero plugin was confirmed as =1.1.0pre3=;
+  the user reported that Settings -> Choose did nothing. The pre4 correction
+  requires a manual plugin upgrade; the Homebrew CLI was last checked at =1.0.0=.
 - DT3 and DT4 are both installed. Only DT4 is an allowed destination.
 - Zotero MCP has been assessed from its documentation; it has not been installed,
   connected, or tested alongside this plugin in this task.
@@ -48,9 +49,11 @@ Acceptance: useful, verifiable retrieval without modifying Zotero items or
 disrupting exports. Any later write access or remote embedding setup needs a
 separate decision.
 
-** TODO Install and validate the DT4-only preview inside Zotero
-- [ ] Install [[file:dist/zpm-zotero-1.1.0pre3.xpi][zpm-zotero-1.1.0pre3.xpi]] through
+** TODO Upgrade and validate the DT4-only preview inside Zotero
+- [ ] Install [[file:dist/zpm-zotero-1.1.0pre4.xpi][zpm-zotero-1.1.0pre4.xpi]] through
   Tools -> Plugins -> gear -> Install Plugin From File.
+- [ ] Confirm the saved settings load and Choose opens a native folder dialog;
+  verify cancellation, saving, and persistence after restarting Zotero.
 - [ ] Confirm both destination menu actions appear.
 - [ ] Follow [[file:docs/TESTING.md][the Agentic_AI guide]] to save a notebook link,
   restart Zotero, verify repeat routing, then test change/clear/cancel behavior.
@@ -84,12 +87,21 @@ separate decision.
 - Browser-assisted creation and automatic uploads are still future options.
 
 ** DONE Build and check the local preview
-- Latest regular suite: 99 Python tests and 30 JavaScript tests passed.
+- Latest regular suite: 99 Python tests and 40 JavaScript tests passed.
 - The separate DT4 live smoke test passed; the Finder selection live test also
   passed during the preceding handoff implementation.
 - XPI archive integrity was checked. Python wheel and source archive were built.
 - This does not constitute an end-to-end test of the installed Zotero menu or
   a completed upload to Gemini Notebook.
+
+** DONE Correct Settings initialization and folder selection
+- Resolve the plugin's isolated preference-pane scope from the markup load
+  handler; the previous window-global lookup left all controls uninitialized.
+- Parent the native folder picker to Settings, allow replacing invalid/stale
+  paths, preserve cancellation, and display errors without disabling retries.
+- Add regression tests that execute markup and scripts in separate scopes,
+  covering saved settings, folder selection, cancellation, retries, and persistence.
+- Keep the upgrade and native-dialog manual check in the validation task above.
 
 * Notes
 ** Current handoff behavior
@@ -184,7 +196,7 @@ handoff. Generated summaries and citations still need source verification.
 - [[file:README.md][Project README and CLI usage]]
 - [[file:zotero-plugin/README.md][Zotero plugin guide]]
 - [[file:CHANGELOG.md][Changelog]]
-- [[file:dist/zpm-zotero-1.1.0pre3.xpi][Zotero preview with remembered links]]
+- [[file:dist/zpm-zotero-1.1.0pre4.xpi][Zotero preview with remembered links and Settings fix]]
 - [[file:docs/TESTING.md][Agentic_AI installation and test guide]]
 - [[https://github.com/sbilmis/zotero-project-manager][Project repository]]
 - [[https://github.com/peterdresslar/zotero-gemini-notebook][Reference Zotero/Gemini browser-bridge implementation]]
@@ -197,6 +209,17 @@ handoff. Generated summaries and citations still need source verification.
 - [[file:/Users/sbilmis/.emacs.d/snippets/org-mode/tproj][Original tproj notebook snippet]]
 
 * Work Log
+** [2026-09-11 Fri] Correct the Settings Choose button
+- Confirmed the installed pre3 XPI and inspected Zotero's preference-pane loader.
+- Reproduced the initialization error in a two-scope regression harness, then
+  corrected the scope lookup and native folder picker's parent window.
+- Added manual upgrade, saved-path, Choose, cancellation, and persistence checks.
+- All 40 JavaScript tests and 99 Python tests passed (2 opt-in desktop tests
+  skipped). Built and integrity-checked the pre4 XPI; native-dialog confirmation
+  in the user's Zotero profile remains a manual check after upgrading.
+- User approved fixing, rebuilding, and pushing this correction; this does not
+  install the new XPI, merge to main, or publish a release.
+
 ** [2026-09-10 Thu] Implement remembered links and prepare the GitHub handoff
 - Implemented per-collection saved links, first-send setup, and edit/clear actions.
 - Verified URL validation, collection isolation, simulated plugin reload,

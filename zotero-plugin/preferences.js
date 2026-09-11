@@ -9,10 +9,10 @@ const ZPM_PREFERENCES = {
 
 var ZPMPreferences = {
   initialized: false,
+  choosingOutput: false,
 
   init() {
     if (this.initialized) return;
-    this.initialized = true;
     this.output = document.getElementById("zpm-preferences-output");
     this.layout = document.getElementById("zpm-preferences-layout-select");
     this.includeNonPdf = document.getElementById("zpm-preferences-include-non-pdf");
@@ -49,8 +49,9 @@ var ZPMPreferences = {
     });
     document.getElementById("zpm-preferences-output-button").addEventListener(
       "click",
-      () => void this.chooseOutput(),
+      () => this.chooseOutput(),
     );
+    this.initialized = true;
   },
 
   saveOutput() {
@@ -59,18 +60,39 @@ var ZPMPreferences = {
   },
 
   async chooseOutput() {
-    const { FilePicker } = ChromeUtils.importESModule(
-      "chrome://zotero/content/modules/filePicker.mjs",
-    );
-    const picker = new FilePicker();
-    picker.init(Zotero.getMainWindow(), "Choose zpm export folder", picker.modeGetFolder);
-    if (this.output.value && await IOUtils.exists(this.output.value)) {
-      picker.displayDirectory = this.output.value;
-    }
-    const result = await picker.show();
-    if (result === picker.returnOK) {
-      this.output.value = picker.file;
-      this.saveOutput();
+    if (this.choosingOutput) return;
+    this.choosingOutput = true;
+    const button = document.getElementById("zpm-preferences-output-button");
+    button.disabled = true;
+    try {
+      const { FilePicker } = ChromeUtils.importESModule(
+        "chrome://zotero/content/modules/filePicker.mjs",
+      );
+      const picker = new FilePicker();
+      // Attach the native dialog to Settings, not the potentially obscured or
+      // closed Zotero library window.
+      picker.init(document.defaultView, "Choose zpm export folder", picker.modeGetFolder);
+      const currentPath = this.output.value.trim();
+      if (currentPath) {
+        try {
+          if ((await IOUtils.stat(currentPath)).type === "directory") {
+            picker.displayDirectory = currentPath;
+          }
+        } catch (_error) {
+          // A stale or invalid saved path must not block choosing a replacement.
+        }
+      }
+      const result = await picker.show();
+      if (result === picker.returnOK) {
+        this.output.value = picker.file;
+        this.saveOutput();
+      }
+    } catch (error) {
+      Zotero.logError(error);
+      this.setStatus(`Could not choose an export folder: ${error.message || error}`, "error");
+    } finally {
+      this.choosingOutput = false;
+      button.disabled = false;
     }
   },
 

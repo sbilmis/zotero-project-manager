@@ -313,7 +313,7 @@ Build the local preview XPI with:
 .venv/bin/python scripts/build_zotero_plugin.py --development
 ```
 
-Install `dist/zpm-zotero-1.1.0pre3.xpi` using Zotero's **Tools → Plugins → gear →
+Install `dist/zpm-zotero-1.1.0pre4.xpi` using Zotero's **Tools → Plugins → gear →
 Install Plugin From File…**. This preview is not yet on the public update feed.
 The installed Homebrew/pipx release does not change when this checkout changes;
 use `.venv/bin/python -m zotero_project_manager` to run the CLI from this checkout.

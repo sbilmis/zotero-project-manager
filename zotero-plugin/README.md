@@ -22,6 +22,11 @@ Open **Settings…** from a collection's **Export with zpm** menu, or open Zoter
 The first export prompts for a destination if no valid default exists. Later exports
 update the collection's existing workspace without asking again.
 
+Preview **1.1.0pre4** fixes settings initialization: the saved folder appears on
+opening the pane, and **Choose…** opens a native folder-selection dialog attached
+to Settings. Cancel preserves the current folder. You can also type an absolute
+folder path and leave the field to save it; the status below confirms the change.
+
 ## App destinations
 
 Choose **Send to Gemini Notebook…** from a collection's zpm menu to
