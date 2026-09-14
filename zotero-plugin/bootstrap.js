@@ -6,6 +6,7 @@ async function startup({ id, version, rootURI }) {
   await Zotero.initializationPromise;
   Services.scriptloader.loadSubScript(rootURI + "native-exporter.js");
   Services.scriptloader.loadSubScript(rootURI + "links.js");
+  Services.scriptloader.loadSubScript(rootURI + "picker.js");
   Services.scriptloader.loadSubScript(rootURI + "zpm.js");
   await ZPMPlugin.startup({ id, version, rootURI });
 }

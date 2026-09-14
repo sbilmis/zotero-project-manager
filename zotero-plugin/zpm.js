@@ -1,4 +1,4 @@
-/* global ChromeUtils, Components, IOUtils, PathUtils, Services, ZPMLinkMenus, ZPMNativeExporter, Zotero */
+/* global ChromeUtils, Components, IOUtils, PathUtils, Services, ZPMPicker, ZPMLinkMenus, ZPMNativeExporter, Zotero */
 
 const ZPM_PLUGIN_ID = "zpm@zotero-project-manager";
 const ZPM_PREF_OUTPUT = "extensions.zpm.outputDir";
@@ -183,6 +183,7 @@ var ZPMPlugin = {
       this.addToWindow(window);
     }
     ZPMLinkMenus.start(this);
+    ZPMPicker.start();
     Zotero.debug("zpm companion plugin started");
   },
 
@@ -195,6 +196,7 @@ var ZPMPlugin = {
   },
 
   shutdown() {
+    ZPMPicker.stop();
     ZPMLinkMenus.stop();
     for (const window of Zotero.getMainWindows()) {
       this.removeFromWindow(window);

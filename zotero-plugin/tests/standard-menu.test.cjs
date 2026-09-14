@@ -22,6 +22,7 @@ function harness() {
       debug() {}, logError() {},
       launchURL() { assert.fail("A standard export must not launch external apps"); },
     },
+    ZPMPicker: { start() {}, stop() {} },
     ZPMNativeExporter: {
       async exportSnapshot(snapshot, _fileSystem, key, options) {
         exports.push({ snapshot, key, options });

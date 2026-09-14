@@ -2,6 +2,18 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 1.3.0 — 2026-09-14
+
+- Browse direct collection papers from Emacs by author, year, title, and key.
+- Insert collection-specific Org links or select a paper record in Zotero.
+- Remember a collection per Org note with a persistent file-wide keyword.
+- Add a read-only local picker endpoint respecting Zotero's local API permission.
+- Offer setup instructions when local access is disabled; decode HTTP JSON as
+  UTF-8 so punctuation and non-English metadata display correctly.
+- Document Emacs installation, persistent loading, optional settings, and recovery.
+- Owner verified the picker after enabling local access. Existing links, exports,
+  zotxt/APA configuration, and keybindings remain unchanged.
+
 ## 1.2.0 — 2026-09-14
 
 - Copy native Org, Markdown, and Zotero URI links for collections, paper records,
