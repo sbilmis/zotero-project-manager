@@ -17,4 +17,6 @@ def test_preview_package_contains_core_plugin_and_settings_only(tmp_path, monkey
         assert not any(name.endswith(".applescript") for name in archive.namelist())
         assert "destinations.js" not in archive.namelist()
         assert b"destinations.js" not in archive.read("bootstrap.js")
+        assert b'loadSubScript(rootURI + "links.js")' in archive.read("bootstrap.js")
+        assert b"copyTextToClipboard" in archive.read("links.js")
         assert b"getScope('zpm-preferences').ZPMPreferences.init()" in archive.read("preferences.xhtml")

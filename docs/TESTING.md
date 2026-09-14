@@ -1,14 +1,14 @@
 # Test the simplified exporter with Agentic_AI
 
-This guide targets Zotero plugin **1.1.0**. It exports to one standard workspace
+This guide targets Zotero plugin **1.2.0**. It exports to one standard workspace
 per collection, with no Gemini Notebook or DEVONthink integration. Existing export
 folders are not removed by upgrading.
 
 ## 1. Install or update the stable release
 
 1. Existing users can run **Tools → Plugins → gear → Check for Updates**.
-   For a manual install, download `zpm-zotero-1.1.0.xpi` from the
-   [1.1.0 release](https://github.com/sbilmis/zotero-project-manager/releases/tag/v1.1.0).
+   For a manual install, download `zpm-zotero-1.2.0.xpi` from the
+   [1.2.0 release](https://github.com/sbilmis/zotero-project-manager/releases/tag/v1.2.0).
    To build it from the release source checkout:
 
    ```bash
@@ -17,12 +17,13 @@ folders are not removed by upgrading.
 
 2. In Zotero, open **Tools → Plugins → gear → Install Plugin From File…** and
    select the XPI. Install over the existing plugin; no uninstall is needed.
-3. Restart Zotero if requested and confirm **Zotero Project Manager 1.1.0** is enabled.
-4. Right-click **My-AI → Agentic_AI → Export with zpm**. Expect exactly:
+3. Restart Zotero if requested and confirm **Zotero Project Manager 1.2.0** is enabled.
+4. Right-click **Agentic_AI**, then open **Zotero Project Manager → Export**. Expect:
 
-   - **Export Collection**
-   - **Export Collection + Annotations**
-   - **Settings…**
+   - **Collection**
+   - **Collection + Annotations**
+
+   **Settings…** is beside Export in the parent Zotero Project Manager menu.
 
    The Gemini/DT4 Send actions and notebook-link setup must be gone.
 
@@ -46,7 +47,7 @@ or the direct release XPI instead. No uninstall is needed, including from pre5.
 ## 3. Export the selected collection
 
 1. Confirm a few PDFs inside **Agentic_AI** open locally in Zotero.
-2. Right-click **Agentic_AI → Export with zpm → Export Collection + Annotations**.
+2. Right-click **Agentic_AI → Zotero Project Manager → Export → Collection + Annotations**.
 3. Expect an **Export complete** summary and the path
    `/Users/sbilmis/scratch/zpm_test/Agentic_AI` if you selected that parent folder.
 4. Open that folder in Finder yourself. Check PDFs, generated annotation/child-note
@@ -56,7 +57,7 @@ or the direct release XPI instead. No uninstall is needed, including from pre5.
    No new `Agentic_AI - NotebookLM` workspace should be created.
 
 Selecting Agentic_AI includes its descendants, not its My-AI parent or siblings.
-**Export Collection** uses the same workspace without generating new annotation
+**Collection** uses the same workspace without generating new annotation
 documents; previously exported files can remain, since ordinary exports do not prune.
 
 ## 4. Check repeat export and existing-folder preservation

@@ -1,4 +1,4 @@
-/* global ChromeUtils, Components, IOUtils, PathUtils, Services, ZPMNativeExporter, Zotero */
+/* global ChromeUtils, Components, IOUtils, PathUtils, Services, ZPMLinkMenus, ZPMNativeExporter, Zotero */
 
 const ZPM_PLUGIN_ID = "zpm@zotero-project-manager";
 const ZPM_PREF_OUTPUT = "extensions.zpm.outputDir";
@@ -165,7 +165,6 @@ const ZPMZoteroFileSystem = {
 var ZPMPlugin = {
   id: ZPM_PLUGIN_ID,
   rootURI: "",
-  menuID: null,
   exportInProgress: false,
 
   async startup({ id, rootURI }) {
@@ -183,45 +182,7 @@ var ZPMPlugin = {
     for (const window of Zotero.getMainWindows()) {
       this.addToWindow(window);
     }
-    const plugin = this;
-    this.menuID = Zotero.MenuManager.registerMenu({
-      menuID: "zpm-export-collection",
-      pluginID: this.id,
-      target: "main/library/collection",
-      menus: [
-        {
-          menuType: "submenu",
-          l10nID: "zpm-menu-root",
-          onShowing(_event, context) {
-            context.setVisible(Boolean(context.collectionTreeRow?.isCollection()));
-          },
-          menus: [
-            {
-              menuType: "menuitem",
-              l10nID: "zpm-menu-export-pdfs",
-              onCommand(_event, context) {
-                void plugin.exportSelected(context, false);
-              },
-            },
-            {
-              menuType: "menuitem",
-              l10nID: "zpm-menu-export-annotations",
-              onCommand(_event, context) {
-                void plugin.exportSelected(context, true);
-              },
-            },
-            { menuType: "separator" },
-            {
-              menuType: "menuitem",
-              l10nID: "zpm-menu-settings",
-              onCommand() {
-                Zotero.Utilities.Internal.openPreferences("zpm-preferences");
-              },
-            },
-          ],
-        },
-      ],
-    });
+    ZPMLinkMenus.start(this);
     Zotero.debug("zpm companion plugin started");
   },
 
@@ -234,10 +195,7 @@ var ZPMPlugin = {
   },
 
   shutdown() {
-    if (this.menuID) {
-      Zotero.MenuManager.unregisterMenu(this.menuID);
-      this.menuID = null;
-    }
+    ZPMLinkMenus.stop();
     for (const window of Zotero.getMainWindows()) {
       this.removeFromWindow(window);
     }
