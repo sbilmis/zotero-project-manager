@@ -16,7 +16,8 @@ function harness() {
     Zotero: {
       Prefs: { get: (key) => prefs.get(key) },
       PreferencePanes: { register: async (options) => settings.push(options) },
-      MenuManager: { registerMenu: (options) => { sandbox.menu = options; return "menu-id"; } },
+      MenuManager: { registerMenu: (options) => { if (options.target === "main/library/collection") sandbox.menu = options; return options.menuID; } },
+      Reader: { registerEventListener() {} },
       getMainWindows: () => [],
       debug() {}, logError() {},
       launchURL() { assert.fail("A standard export must not launch external apps"); },
@@ -31,6 +32,7 @@ function harness() {
       },
     },
   });
+  vm.runInContext(fs.readFileSync(path.join(__dirname, "../links.js"), "utf8"), sandbox);
   vm.runInContext(fs.readFileSync(path.join(__dirname, "../zpm.js"), "utf8"), sandbox);
   const plugin = sandbox.module.exports.ZPMPlugin;
   plugin.alert = (...args) => alerts.push(args);
@@ -41,13 +43,16 @@ function harness() {
   return { sandbox, plugin, selection, alerts, exports, settings };
 }
 
-test("collection menu offers only standard export actions and Settings", async () => {
+test("unified collection menu retains export actions and Settings", async () => {
   const h = harness();
   await h.plugin.startup({ id: "zpm@zotero-project-manager", rootURI: "plugin/" });
   assert.equal(h.settings[0].id, "zpm-preferences");
-  const menu = h.sandbox.menu.menus[0].menus;
+  const root = h.sandbox.menu.menus[0];
+  assert.equal(root.l10nID, "zpm-menu-root");
+  assert.deepEqual(Array.from(root.menus, x => x.l10nID || x.menuType), ["zpm-copy-root", "zpm-export-root", "separator", "zpm-menu-settings"]);
+  const menu = root.menus[1].menus;
   assert.deepEqual(Array.from(menu, (entry) => entry.l10nID || entry.menuType), [
-    "zpm-menu-export-pdfs", "zpm-menu-export-annotations", "separator", "zpm-menu-settings",
+    "zpm-menu-export-pdfs", "zpm-menu-export-annotations",
   ]);
   const commands = [];
   h.plugin.exportSelected = (...args) => commands.push(args);

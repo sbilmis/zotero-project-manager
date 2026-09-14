@@ -4,7 +4,7 @@ Zotero Project Manager exports Zotero collections into clean, ordinary research
 folders. Zotero remains the source of truth: the project reads Zotero data and copies
 attachments outward without modifying the library, database, or original files.
 
-Use the self-contained Zotero 9 plugin for interactive exports, or the Python CLI for
+Use the self-contained Zotero 9 plugin for native note links and interactive exports, or the Python CLI for
 batch operations, automation, verification, and safe pruning.
 
 ## Choose an interface
@@ -36,9 +36,9 @@ Existing installations can be upgraded in place.
 Right-click a collection to use:
 
 ```text
-Export with zpm
-    Export Collection
-    Export Collection + Annotations
+Zotero Project Manager
+    Copy Link → Org / Markdown / Zotero URI
+    Export → Collection / Collection + Annotations
     Settings…
 ```
 
@@ -52,6 +52,16 @@ Settings control:
 The first export asks for a destination if no valid default exists. Zotero can install
 future releases automatically when **Update Add-ons Automatically** is enabled in the
 Plugins gear menu; **Check for Updates** provides a manual check.
+
+## Native links (1.2.0)
+
+Right-click a collection, paper record, or PDF attachment and choose **Zotero Project Manager → Copy Link**. Copy Org links for Emacs, Markdown links for Obsidian, or plain Zotero
+URIs. The PDF reader also offers page and annotation links. Explicit **Copy Multiple Links** commands copy selected paper records and PDFs, one per line. Only My
+Library is supported; unsupported entries disable copying and batches never skip
+invalid entries. These commands use Zotero’s native clipboard and need neither
+Actions & Tags nor zotxt, bibliography styles, or an export folder.
+
+See [installation, Emacs setup, examples, and testing](docs/LINKS.md). Version 1.2.0 includes these native link commands.
 
 ## One workspace, your choice of app
 
@@ -216,7 +226,7 @@ Build the release XPI and verify its update-feed entry with:
 .venv/bin/python scripts/build_zotero_plugin.py
 ```
 
-Install `dist/zpm-zotero-1.1.0.xpi` using Zotero's **Tools → Plugins → gear →
+Install `dist/zpm-zotero-1.2.0.xpi` using Zotero's **Tools → Plugins → gear →
 Install Plugin From File…**, or use the XPI from the matching GitHub release.
 The installed Homebrew/pipx release does not change when this checkout changes;
 use `.venv/bin/python -m zotero_project_manager` to run the CLI from this checkout.
@@ -228,3 +238,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [PUBLISHING.md](PUBLISHING.md), the
 development and release details.
 
 Zotero Project Manager is released under the [MIT License](LICENSE).
+
+For a paper inside a collection, **Zotero Project Manager → Copy Link in This
+Collection** offers Org, Markdown, and Zotero URI formats that preserve that
+collection context. Ordinary item and PDF links remain unchanged.

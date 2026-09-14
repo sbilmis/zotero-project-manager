@@ -1,6 +1,6 @@
 # Zotero Project Manager plugin for Zotero 9
 
-The plugin adds **Export with zpm** to Zotero's collection context menu and performs
+The plugin adds **Zotero Project Manager → Export** to Zotero's collection context menu and performs
 the complete export inside Zotero. It requires no Python installation, Homebrew,
 pipx, or executable configuration. Folder exports remain entirely in Zotero;
 no external app handoffs, AppleScript, or uploads are performed.
@@ -11,7 +11,7 @@ and never writes to `zotero.sqlite`, Zotero attachments, or Zotero's annotation 
 
 ## Settings
 
-Open **Settings…** from a collection's **Export with zpm** menu, or open Zotero
+Open **Settings…** from a collection's **Zotero Project Manager** menu, or open Zotero
 **Settings → Zotero Project Manager**, to configure:
 
 - the default output parent folder;
@@ -29,8 +29,8 @@ folder path and leave the field to save it; the status below confirms the change
 
 ## Standard export workflow
 
-The collection menu contains **Export Collection**, **Export Collection +
-Annotations**, and **Settings…**. Both exports use the same standard workspace;
+The collection menu contains **Zotero Project Manager → Export → Collection**
+and **Collection + Annotations**, with **Settings…** beside Export. Both exports use the same standard workspace;
 repeat exports update it rather than creating an app-specific copy. Existing
 workspaces retain their recorded layout and filename settings.
 
@@ -57,3 +57,18 @@ GitHub asset and verifies its SHA-256 digest.
 
 The Python `zpm` CLI remains an optional, independent interface for terminal
 automation, scheduled exports, safe pruning, and full verification.
+
+## Native note links (1.2.0)
+
+**Zotero Project Manager → Copy Link** is a separate collection/item context submenu. It copies
+Org, Markdown, and plain URI links without exporting. Paper links select records;
+PDF links address the attachment itself. PDF reader context menus also support
+physical page and saved annotation links. Dedicated batch commands accept two or
+more paper/PDF selections from My Library and reject the entire batch if any
+entry is unsupported. Existing export commands and settings are unchanged.
+
+See [the beginner link guide](../docs/LINKS.md) for installation and testing.
+
+For a paper inside a collection, **Zotero Project Manager → Copy Link in This
+Collection** offers Org, Markdown, and Zotero URI formats that preserve that
+collection context. Ordinary item and PDF links remain unchanged.

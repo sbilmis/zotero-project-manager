@@ -2,6 +2,21 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 1.2.0 — 2026-09-14
+
+- Copy native Org, Markdown, and Zotero URI links for collections, paper records,
+  PDFs, physical PDF pages, and saved annotations without exports or zotxt.
+- Add explicit batch copying for selected paper records and PDF attachments.
+- Add optional paper links that preserve the collection they were copied from.
+- Consolidate context actions under Zotero Project Manager with relevant Copy
+  Link, Export, and Settings submenus; existing exports are unchanged.
+- Validate personal-library selections, keys, membership, and reader targets;
+  normalize labels and reject unsupported batches without replacing the clipboard.
+- Include named, validated macOS Emacs handlers and a beginner installation guide.
+- User verified the consolidated menus and both ordinary and collection-specific
+  Org item activation in pre2. PDF/page/annotation and Obsidian GUI checks remain
+  manual; automated formatting, selection, and activation tests pass.
+
 ## 1.1.0 — 2026-09-11
 
 Maintenance release with the same standard export feature set as public 1.0.0.
