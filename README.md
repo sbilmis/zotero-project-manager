@@ -68,7 +68,7 @@ See [installation, Emacs setup, examples, and testing](docs/LINKS.md). Version 1
 From an Org note, run `M-x zpm-insert-paper-link` or `M-x zpm-open-paper` to browse
 papers in the selected Zotero collection by author, year, and title. Remember a
 collection per note with `zpm-remember-collection`. This local, read-only bridge
-requires the preview plugin and Zotero's local API permission. Existing native
+requires plugin 1.3.0 or newer and Zotero's local API permission. Existing native
 links and exports remain unchanged. See the [beginner picker guide](docs/PAPER-PICKER.md).
 Version 1.3.0 is the stable release of the picker.
 

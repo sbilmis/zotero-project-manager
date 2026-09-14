@@ -120,7 +120,7 @@ collection-specific link. Ordinary item links remain available in Zotero's menu.
 - **Cannot reach Zotero:** open Zotero, confirm the plugin version, and check the
   Advanced setting above. The default local port is 23119. If you deliberately
   changed Zotero's port, use **M-x customize-variable → zpm-port** to match it.
-- **Install the picker preview:** the running plugin predates the endpoint; install
+- **Picker endpoint not found:** the running plugin predates the endpoint; install
   1.3.0 and restart Zotero if requested. Emacs configuration alone is insufficient.
 - **Select a collection:** My Library itself, saved searches, and group libraries
   are unsupported. Select a personal collection or use a remembered collection.
