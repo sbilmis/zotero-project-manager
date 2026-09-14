@@ -73,9 +73,9 @@ For a paper inside a collection, **Zotero Project Manager → Copy Link in This
 Collection** offers Org, Markdown, and Zotero URI formats that preserve that
 collection context. Ordinary item and PDF links remain unchanged.
 
-## Emacs collection picker preview
+## Emacs collection picker
 
-Version 1.3.0pre2 adds a read-only local collection/paper endpoint for the Emacs
+Version 1.3.0 adds a read-only local collection/paper endpoint for the Emacs
 picker. It respects the local API permission and only exposes personal-library
 paper metadata. See [the picker guide](../docs/PAPER-PICKER.md) for the Emacs
 module, installation, commands, and manual checks. No new Zotero menus are needed.

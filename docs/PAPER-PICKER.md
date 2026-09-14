@@ -1,6 +1,6 @@
 # Choose Zotero papers from an Org note
 
-The **1.3.0pre2 preview** adds an Emacs paper picker. A picker is a searchable
+The **1.3.0** adds an Emacs paper picker. A picker is a searchable
 list: you can browse it without remembering a title, then select a paper.
 It uses the collection currently selected in Zotero, or a collection remembered
 in the current Org note. Zotero calls its folder-like entries **collections**.
@@ -8,10 +8,10 @@ in the current Org note. Zotero calls its folder-like entries **collections**.
 ## Install the Zotero plugin and Emacs module
 
 1. Download/use the locally built
-   `/Users/sbilmis/developer/projects/zotero-project-manager/dist/zpm-zotero-1.3.0pre2.xpi`.
+   `/Users/sbilmis/developer/projects/zotero-project-manager/dist/zpm-zotero-1.3.0.xpi`.
 2. In **Zotero → Tools → Plugins → gear → Install Plugin From File…**, select that
    XPI. Install over the existing plugin and restart Zotero if prompted. Check that
-   Zotero Project Manager shows **1.3.0pre2**. Version 1.2.0 does not have the picker.
+   Zotero Project Manager shows **1.3.0**. Version 1.2.0 does not have the picker.
 3. In **Zotero → Settings → Advanced**, enable **Allow other applications on this
    computer to communicate with Zotero**. The picker respects this setting and
    does not enable it automatically. No online account or API key is needed.
@@ -24,7 +24,7 @@ in the current Org note. Zotero calls its folder-like entries **collections**.
 The owner installed pre1 and confirmed the picker works after enabling the
 permission. Pre2 includes structured permission errors; the latest Emacs module
 also recognizes pre1's permission error, so its help prompt works with either.
-Pre2 is a development build, not a published release.
+Stable 1.3.0 retains the tested preview behavior.
 
 ## If local access is disabled
 
@@ -121,7 +121,7 @@ collection-specific link. Ordinary item links remain available in Zotero's menu.
   Advanced setting above. The default local port is 23119. If you deliberately
   changed Zotero's port, use **M-x customize-variable → zpm-port** to match it.
 - **Install the picker preview:** the running plugin predates the endpoint; install
-  1.3.0pre2 and restart Zotero if requested. Emacs configuration alone is insufficient.
+  1.3.0 and restart Zotero if requested. Emacs configuration alone is insufficient.
 - **Select a collection:** My Library itself, saved searches, and group libraries
   are unsupported. Select a personal collection or use a remembered collection.
 - **No paper records:** that collection contains no direct regular records. Its
@@ -187,7 +187,7 @@ and APA setting. No new keybindings are needed.
 
 ## Technical scope and verification
 
-The preview registers `GET /zpm/papers` on Zotero's existing local HTTP server.
+The plugin registers `GET /zpm/papers` on Zotero's existing local HTTP server.
 Without a query it reads the main window's selected collection; with
 `?collection=KEY` it reads that exact personal-library collection. It returns only
 schema version, collection name/key, and paper key/title/authors/year. It loads
