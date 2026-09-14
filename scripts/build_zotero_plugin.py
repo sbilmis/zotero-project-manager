@@ -23,6 +23,7 @@ FILES = (
     "native-exporter.js",
     "zpm.js",
     "links.js",
+    "picker.js",
     "locale/en-US/zpm.ftl",
 )
 

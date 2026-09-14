@@ -61,8 +61,8 @@ jobs:
         with:
           python-version: "3.x"
       - name: Check JavaScript and run plugin tests
-        run: node --check zotero-plugin/bootstrap.js && node --check zotero-plugin/native-exporter.js && node --check zotero-plugin/links.js && node --check zotero-plugin/zpm.js && node --check zotero-plugin/preferences.js && node --test zotero-plugin/tests/*.test.cjs
+        run: node --check zotero-plugin/bootstrap.js && node --check zotero-plugin/native-exporter.js && node --check zotero-plugin/picker.js && node --check zotero-plugin/links.js && node --check zotero-plugin/zpm.js && node --check zotero-plugin/preferences.js && node --test zotero-plugin/tests/*.test.cjs
       - name: Build companion plugin
-        run: python scripts/build_zotero_plugin.py
+        run: python scripts/build_zotero_plugin.py --development
       - name: Verify XPI contents
         run: unzip -t dist/zpm-zotero-*.xpi

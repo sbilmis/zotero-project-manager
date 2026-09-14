@@ -159,6 +159,7 @@ test('bootstrap loads the packaged link module and starts/stops all menus alongs
     APP_SHUTDOWN: 99,
     Zotero: {
       initializationPromise: Promise.resolve(),
+      Server: { Endpoints: {} },
       PreferencePanes: { register: async () => {} },
       getMainWindows: () => [], debug() {}, logError() {},
       Libraries: { userLibraryID: 1 },
