@@ -1,5 +1,5 @@
 zpm-menu-root =
-    .label = Zotero Project Manager
+    .label = ZPM
 
 zpm-export-root =
     .label = Export

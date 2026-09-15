@@ -173,7 +173,7 @@ var ZPMPlugin = {
     await Zotero.PreferencePanes.register({
       pluginID: this.id,
       id: "zpm-preferences",
-      label: "Zotero Project Manager",
+      label: "ZPM",
       src: "preferences.xhtml",
       scripts: ["preferences.js"],
       stylesheets: ["preferences.css"],

@@ -1,8 +1,8 @@
 # Copy Zotero links into notes
 
-This is the **1.2.0 release** of Zotero Project Manager for Zotero
-9. The owner verified the consolidated menus and ordinary and collection-specific
-Org item activation in the pre2 build.
+ZPM — Zotero Project Manager copies links from Zotero 9 into your notes.
+The menu instructions below use the shortened **ZPM** name starting with **1.3.1**;
+versions through **1.3.0** display **Zotero Project Manager** instead.
 
 A **record** is the paper's bibliographic entry: title, authors, publication, notes,
 and attachments. A **PDF attachment** is the actual PDF listed beneath that
@@ -32,7 +32,7 @@ there are no export prompts, files, library edits, shell processes, or uploads.
 ## Copy one collection, paper, or PDF
 
 In Zotero, use entries in **My Library**. Right-click one entry, then choose
-**Zotero Project Manager → Copy Link → Org**, **Markdown**, or **Zotero URI**.
+**ZPM → Copy Link → Org**, **Markdown**, or **Zotero URI**.
 Org is for Emacs; Markdown is for Obsidian; Zotero URI copies only the address
 for another application's link editor. The selected entry determines the target:
 
@@ -50,7 +50,7 @@ there are no redundant Item/PDF commands to choose between.
 The collection menu now has one parent:
 
 ```text
-Zotero Project Manager
+ZPM
     Copy Link
         Org
         Markdown
@@ -69,7 +69,7 @@ keys cannot produce links. Single-link copying is hidden for multiple selections
 ## Select a paper inside the collection you copied from
 
 In Zotero's left sidebar, open a collection such as **scientometry**. Right-click
-one paper directly in that collection, then choose **Zotero Project Manager →
+one paper directly in that collection, then choose **ZPM →
 Copy Link in This Collection → Org**, **Markdown**, or **Zotero URI**.
 
 The link records both the paper key and the currently selected collection key.
@@ -100,7 +100,7 @@ fallback or guessing is performed. PDF/page/annotation links still open the read
 
 In Zotero's middle item list, select two or more rows using Command-click on
 macOS, or select a contiguous range with Shift-click. Right-click the selection,
-then choose **Zotero Project Manager → Copy Multiple Links → Org**, **Markdown**,
+then choose **ZPM → Copy Multiple Links → Org**, **Markdown**,
 or **Zotero URI**.
 
 The clipboard contains one link per line in Zotero's supplied selection order.
@@ -114,13 +114,13 @@ multiple-page, and multiple-annotation copying are not supported.
 ## Copy a PDF page or annotation
 
 1. Open a PDF inside Zotero's reader.
-2. For a page link, right-click text on the desired PDF page and choose **Zotero Project Manager → Copy PDF Page Link → Org**. Alternatively, open the reader's
+2. For a page link, right-click text on the desired PDF page and choose **ZPM → Copy PDF Page Link → Org**. Alternatively, open the reader's
    left sidebar, choose its **Thumbnails** view (small page previews), select one
    thumbnail and right-click it. This is the reliable option if clicking blank
    space provides no page position and the command is disabled.
 3. For an annotation link, first save a highlight or another annotation normally
    in Zotero. Right-click that annotation on the page or in the reader's
-   annotations sidebar. Choose **Zotero Project Manager → Copy Annotation Link → Org**.
+   annotations sidebar. Choose **ZPM → Copy Annotation Link → Org**.
 4. The same reader submenus offer **Markdown** and **Zotero URI** formats.
 
 Page numbers are physical PDF positions, starting at 1, not printed page labels

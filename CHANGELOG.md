@@ -2,6 +2,12 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 1.3.1 — 2026-09-15
+
+- Use ZPM in Zotero menus and settings, and “ZPM — Zotero Project Manager”
+  as the installed plugin name and README title. Update current menu guides;
+  package names, commands, plugin ID, and update URLs remain unchanged.
+
 ## 1.3.0 — 2026-09-14
 
 - Browse direct collection papers from Emacs by author, year, title, and key.
