@@ -1,6 +1,8 @@
-# Zotero Project Manager plugin for Zotero 9
+# ZPM — Zotero Project Manager
 
-The plugin adds **Zotero Project Manager → Export** to Zotero's collection context menu and performs
+A plugin for Zotero 9.
+
+The plugin adds **ZPM → Export** to Zotero's collection context menu and performs
 the complete export inside Zotero. It requires no Python installation, Homebrew,
 pipx, or executable configuration. Folder exports remain entirely in Zotero;
 no external app handoffs, AppleScript, or uploads are performed.
@@ -9,10 +11,13 @@ The plugin reads collections, metadata, attachments, notes, and annotations thro
 Zotero's in-process APIs. It copies files outward to the selected export directory
 and never writes to `zotero.sqlite`, Zotero attachments, or Zotero's annotation cache.
 
+Menu names below use **ZPM** starting with **1.3.1**. Versions through
+**1.3.0** display **Zotero Project Manager** instead.
+
 ## Settings
 
-Open **Settings…** from a collection's **Zotero Project Manager** menu, or open Zotero
-**Settings → Zotero Project Manager**, to configure:
+Open **Settings…** from a collection's **ZPM** menu, or open Zotero
+**Settings → ZPM**, to configure:
 
 - the default output parent folder;
 - whether to include non-PDF attachments such as `README.md`, text, images, or data;
@@ -29,7 +34,7 @@ folder path and leave the field to save it; the status below confirms the change
 
 ## Standard export workflow
 
-The collection menu contains **Zotero Project Manager → Export → Collection**
+The collection menu contains **ZPM → Export → Collection**
 and **Collection + Annotations**, with **Settings…** beside Export. Both exports use the same standard workspace;
 repeat exports update it rather than creating an app-specific copy. Existing
 workspaces retain their recorded layout and filename settings.
@@ -60,7 +65,7 @@ automation, scheduled exports, safe pruning, and full verification.
 
 ## Native note links (1.2.0)
 
-**Zotero Project Manager → Copy Link** is a separate collection/item context submenu. It copies
+**ZPM → Copy Link** is a separate collection/item context submenu. It copies
 Org, Markdown, and plain URI links without exporting. Paper links select records;
 PDF links address the attachment itself. PDF reader context menus also support
 physical page and saved annotation links. Dedicated batch commands accept two or
@@ -69,7 +74,7 @@ entry is unsupported. Existing export commands and settings are unchanged.
 
 See [the beginner link guide](../docs/LINKS.md) for installation and testing.
 
-For a paper inside a collection, **Zotero Project Manager → Copy Link in This
+For a paper inside a collection, **ZPM → Copy Link in This
 Collection** offers Org, Markdown, and Zotero URI formats that preserve that
 collection context. Ordinary item and PDF links remain unchanged.
 

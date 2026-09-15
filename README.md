@@ -1,6 +1,6 @@
-# Zotero Project Manager (`zpm`)
+# ZPM — Zotero Project Manager
 
-Zotero Project Manager exports Zotero collections into clean, ordinary research
+ZPM exports Zotero collections into clean, ordinary research
 folders. Zotero remains the source of truth: the project reads Zotero data and copies
 attachments outward without modifying the library, database, or original files.
 
@@ -33,10 +33,13 @@ Download the XPI from the [latest GitHub release](https://github.com/sbilmis/zot
 then open **Zotero → Tools → Plugins → gear menu → Install Plugin From File…**.
 Existing installations can be upgraded in place.
 
+Menu names below use **ZPM** starting with **1.3.1**. Versions through
+**1.3.0** display **Zotero Project Manager** instead.
+
 Right-click a collection to use:
 
 ```text
-Zotero Project Manager
+ZPM
     Copy Link → Org / Markdown / Zotero URI
     Export → Collection / Collection + Annotations
     Settings…
@@ -55,7 +58,7 @@ Plugins gear menu; **Check for Updates** provides a manual check.
 
 ## Native links (1.2.0)
 
-Right-click a collection, paper record, or PDF attachment and choose **Zotero Project Manager → Copy Link**. Copy Org links for Emacs, Markdown links for Obsidian, or plain Zotero
+Right-click a collection, paper record, or PDF attachment and choose **ZPM → Copy Link**. Copy Org links for Emacs, Markdown links for Obsidian, or plain Zotero
 URIs. The PDF reader also offers page and annotation links. Explicit **Copy Multiple Links** commands copy selected paper records and PDFs, one per line. Only My
 Library is supported; unsupported entries disable copying and batches never skip
 invalid entries. These commands use Zotero’s native clipboard and need neither
@@ -246,8 +249,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [PUBLISHING.md](PUBLISHING.md), the
 [plugin guide](zotero-plugin/README.md), and [CHANGELOG.md](CHANGELOG.md) for focused
 development and release details.
 
-Zotero Project Manager is released under the [MIT License](LICENSE).
+ZPM is released under the [MIT License](LICENSE).
 
-For a paper inside a collection, **Zotero Project Manager → Copy Link in This
+For a paper inside a collection, **ZPM → Copy Link in This
 Collection** offers Org, Markdown, and Zotero URI formats that preserve that
 collection context. Ordinary item and PDF links remain unchanged.

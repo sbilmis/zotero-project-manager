@@ -272,7 +272,7 @@ var ZPMLinkMenus = {
       onCommand: () => this.copy(getTargets, format),
     }));
     event.append({
-      label: "Zotero Project Manager",
+      label: "ZPM",
       groups: [[{ label: `Copy ${name} Link`, groups: [commands] }]],
     });
   },
