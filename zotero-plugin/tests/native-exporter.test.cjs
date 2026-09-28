@@ -225,6 +225,34 @@ test("native export copies PDFs and Markdown while isolating control files", asy
   assert.equal(second.copied, 0);
 });
 
+test("repeat export copies only differing files and restores exported edits from Zotero", async (context) => {
+  const value = await fixture();
+  context.after(() => fs.rm(value.root, { recursive: true, force: true }));
+  const fileSystem = new NodeFileSystem();
+  const options = { outputDir: value.output, includeNonPdf: true };
+  const run = () => exportSnapshot(snapshot(value.pdf, value.markdown), fileSystem, "ROOTKEY1", options);
+  const first = await run();
+  const destination = path.join(first.workspace, "Vaswani - 2017 - Attention Is All You Need.pdf");
+  const copies = [];
+  const copy = fileSystem.copyAtomic.bind(fileSystem);
+  fileSystem.copyAtomic = async (source, target) => { copies.push(target); await copy(source, target); };
+  const unchanged = await run();
+  assert.equal(unchanged.unchanged, 2);
+  assert.deepEqual(copies, []);
+  await fs.writeFile(value.pdf, "updated Zotero PDF");
+  const changed = await run();
+  assert.equal(changed.updated, 1);
+  assert.equal(changed.unchanged, 1);
+  assert.deepEqual(copies, [destination]);
+  assert.equal(await fs.readFile(destination, "utf8"), "updated Zotero PDF");
+  await fs.writeFile(destination, "external reader highlights and notes");
+  const restored = await run();
+  assert.equal(restored.updated, 1);
+  assert.equal(restored.unchanged, 1);
+  assert.equal(await fs.readFile(value.pdf, "utf8"), "updated Zotero PDF");
+  assert.equal(await fs.readFile(destination, "utf8"), "updated Zotero PDF");
+});
+
 test("standard export creates one workspace and preserves a legacy Notebook sibling", async (context) => {
   const value = await fixture();
   context.after(() => fs.rm(value.root, { recursive: true, force: true }));

@@ -36,6 +36,12 @@ def verify_update_feed(target: Path, version: str) -> None:
     update = next((item for item in updates if item.get("version") == version), None)
     if update is None:
         raise RuntimeError(f"updates.json has no entry for plugin version {version}")
+    manifest = json.loads((PLUGIN / "manifest.json").read_text(encoding="utf-8"))
+    compatibility = manifest["applications"]["zotero"]
+    offered = update.get("applications", {}).get("zotero", {})
+    for field in ("strict_min_version", "strict_max_version"):
+        if offered.get(field) != compatibility[field]:
+            raise RuntimeError(f"updates.json {field} does not match manifest.json")
     digest = hashlib.sha256(target.read_bytes()).hexdigest()
     expected_hash = f"sha256:{digest}"
     if update.get("update_hash") != expected_hash:

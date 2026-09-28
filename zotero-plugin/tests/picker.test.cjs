@@ -31,6 +31,25 @@ test('selected collection returns direct regular records, safe labels, authors/y
   assert.deepEqual(data.papers, [{ key: 'ABCD2345', title: 'Paper ［one］ second line', authors: 'Author', year: '2020' }]);
 });
 
+test('Zotero 10 picker uses all selected rows and never calls removed singular getters', async () => {
+  const h = harness();
+  const row = { isCollection: () => true, ref: h.collection };
+  let rows = [row];
+  h.zotero.getMainWindow = () => ({ ZoteroPane: {
+    getCollectionTreeRows: () => rows,
+    getSelectedCollection: () => assert.fail('Removed in Zotero 10'),
+  } });
+  assert.equal((await h.request())[0], 200);
+  for (const selection of [[], [row, row], [row, { isCollection: () => false }],
+    [{ isCollection: () => false }]]) {
+    rows = selection;
+    const result = await h.request();
+    assert.equal(result[0], 409);
+    assert.match(JSON.parse(result[2]).error, /exactly one collection/);
+    assert.equal((await h.request('collection=6RIU3F76'))[0], 200);
+  }
+});
+
 test('remembered collection is independent of current selection; missing and invalid keys fail', async () => {
   const h = harness(); h.zotero.getMainWindow = () => null;
   assert.equal((await h.request('collection=6RIU3F76'))[0], 200);

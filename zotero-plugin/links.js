@@ -3,6 +3,18 @@
 // Zotero.Utilities.allowedKeyChars: eight uppercase characters, excluding 0, 1, O.
 // Formatting and copying have no export, filesystem, network, or process dependencies.
 var ZPMLinks = {
+  selectedCollection(context) {
+    // Zotero 10's singular getter throws, even with only one row selected.
+    // Prefer the full selection so mixed/multiple rows never pick an arbitrary collection.
+    const rows = context && "collectionTreeRows" in context
+      ? context.collectionTreeRows : [context?.collectionTreeRow];
+    if (!Array.isArray(rows) || rows.length !== 1 || !rows[0]?.isCollection?.()
+        || !rows[0].ref?.key) {
+      throw new Error("Select exactly one Zotero collection.");
+    }
+    return rows[0].ref;
+  },
+
   key(value) {
     if (typeof value !== "string" || !/^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$/.test(value)
         || value.length !== 8) {
@@ -143,7 +155,10 @@ var ZPMLinkMenus = {
       } else {
         menus.push({
           menuType: "submenu", l10nID: "zpm-export-root",
-          onShowing: (_event, context) => context.setEnabled(Boolean(context.collectionTreeRow?.isCollection?.())),
+          onShowing: (_event, context) => {
+            try { ZPMLinks.selectedCollection(context); context.setEnabled(true); }
+            catch (_error) { context.setEnabled(false); }
+          },
           menus: [false, true].map((annotations) => ({
             menuType: "menuitem",
             l10nID: annotations ? "zpm-menu-export-annotations" : "zpm-menu-export-pdfs",
@@ -215,15 +230,11 @@ var ZPMLinkMenus = {
   targets(context, kind, destination) {
     const libraryID = Zotero.Libraries.userLibraryID;
     if (kind === "collection") {
-      const row = context.collectionTreeRow;
-      if (!row?.isCollection?.()) throw new Error("Right-click a collection under My Library.");
-      return [ZPMLinks.collection(row.ref, libraryID)];
+      return [ZPMLinks.collection(ZPMLinks.selectedCollection(context), libraryID)];
     }
     const targets = ZPMLinks.selection(context.items, libraryID, destination === "multiple");
     if (destination === "in-collection") {
-      const row = context.collectionTreeRow;
-      if (!row?.isCollection?.()) throw new Error("Open a collection before copying a link in this collection.");
-      return [ZPMLinks.itemInCollection(context.items[0], row.ref, libraryID)];
+      return [ZPMLinks.itemInCollection(context.items[0], ZPMLinks.selectedCollection(context), libraryID)];
     }
     return targets;
   },

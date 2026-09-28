@@ -1,4 +1,4 @@
-/* global ChromeUtils, Components, IOUtils, PathUtils, Services, ZPMPicker, ZPMLinkMenus, ZPMNativeExporter, Zotero */
+/* global ChromeUtils, Components, IOUtils, PathUtils, Services, ZPMPicker, ZPMLinks, ZPMLinkMenus, ZPMNativeExporter, Zotero */
 
 const ZPM_PLUGIN_ID = "zpm@zotero-project-manager";
 const ZPM_PREF_OUTPUT = "extensions.zpm.outputDir";
@@ -177,7 +177,7 @@ var ZPMPlugin = {
       src: "preferences.xhtml",
       scripts: ["preferences.js"],
       stylesheets: ["preferences.css"],
-      helpURL: "https://github.com/sbilmis/zotero-project-manager#zotero-9-companion-plugin",
+      helpURL: "https://github.com/sbilmis/zotero-project-manager#zotero-plugin",
     });
     for (const window of Zotero.getMainWindows()) {
       this.addToWindow(window);
@@ -211,20 +211,17 @@ var ZPMPlugin = {
     }
     this.exportInProgress = true;
     try {
-      const row = context.collectionTreeRow;
-      if (!row?.isCollection() || !row.ref?.key) {
-        throw new Error("Select a Zotero collection before exporting.");
-      }
+      const collection = ZPMLinks.selectedCollection(context);
       const outputDir = await this.chooseOutputDirectory(false);
       if (!outputDir) {
         return;
       }
       const annotationLayout = this.annotationLayout();
-      const snapshot = await this.buildSnapshot(row.ref, annotations);
+      const snapshot = await this.buildSnapshot(collection, annotations);
       const stats = await ZPMNativeExporter.exportSnapshot(
         snapshot,
         ZPMZoteroFileSystem,
-        row.ref.key,
+        collection.key,
         {
           outputDir,
           exportAnnotations: annotations,

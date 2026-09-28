@@ -119,6 +119,38 @@ test('native menus dispatch exact selection types, revalidate on command, and pr
   assert.equal(h.copied.length, 2);
 });
 
+test('Zotero 10 collection and scoped item links reject ambiguous selection without reading singular context', () => {
+  const h = harness();
+  const collection = { id: 10, key: '6RIU3F76', libraryID: 1, name: 'Research' };
+  const row = { isCollection: () => true, ref: collection };
+  let enabled;
+  const context = {
+    items: [item()], collectionTreeRows: [row],
+    get collectionTreeRow() { assert.fail('Removed in Zotero 10'); },
+    setEnabled(value) { enabled = value; }, setVisible() {},
+  };
+  const collectionMenu = h.menus[0].menus[0].menus[0];
+  const scopedMenu = h.menus[1].menus[0].menus.find(x => x.l10nID === 'zpm-copy-in-collection');
+  collectionMenu.onShowing(null, context);
+  assert.equal(enabled, true);
+  collectionMenu.menus[0].onCommand(null, context);
+  assert.equal(h.copied[0], '[[zotero-collection:6RIU3F76][Research]]');
+  scopedMenu.menus[0].onCommand(null, context);
+  assert.match(h.copied[1], /collection=6RIU3F76/);
+  for (const rows of [[], [row, row], [row, { isCollection: () => false }],
+    [{ isCollection: () => false }]]) {
+    context.collectionTreeRows = rows;
+    for (const menu of [collectionMenu, scopedMenu]) {
+      menu.onShowing(null, context);
+      assert.equal(enabled, false);
+      menu.menus[0].onCommand(null, context);
+      assert.equal(h.copied.length, 2);
+    }
+  }
+  h.menus[1].menus[0].menus[0].menus[0].onCommand(null, context);
+  assert.equal(h.copied[2], '[[zotero-item:ABCD2345][Paper title]]');
+});
+
 test('reader hooks copy pages and saved annotations and disable unavailable or multiple targets', () => {
   const h = harness();
   function event(type, params) {

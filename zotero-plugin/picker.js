@@ -41,8 +41,15 @@ var ZPMPicker = {
         collection = await Zotero.Collections.getByLibraryAndKeyAsync(libraryID, key);
         if (!collection || collection.deleted) return response(404, { error: "The remembered collection no longer exists in My Library. Use zpm-forget-collection or remember another collection." });
       } else {
-        collection = Zotero.getMainWindow()?.ZoteroPane?.getSelectedCollection();
-        if (!collection) return response(409, { error: "Select a collection under My Library in Zotero, or use a note with a remembered collection." });
+        const pane = Zotero.getMainWindow()?.ZoteroPane;
+        try {
+          collection = typeof pane?.getCollectionTreeRows === "function"
+            ? ZPMLinks.selectedCollection({ collectionTreeRows: pane.getCollectionTreeRows() })
+            : pane?.getSelectedCollection();
+        } catch (_error) {
+          collection = null;
+        }
+        if (!collection) return response(409, { error: "Select exactly one collection under My Library in Zotero, or use a note with a remembered collection." });
       }
       ZPMLinks.personal(collection, libraryID);
       await collection.loadDataType("childItems");
