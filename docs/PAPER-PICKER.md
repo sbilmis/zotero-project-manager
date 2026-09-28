@@ -8,10 +8,10 @@ in the current Org note. Zotero calls its folder-like entries **collections**.
 ## Install the Zotero plugin and Emacs module
 
 1. Download/use the locally built
-   `/Users/sbilmis/developer/projects/zotero-project-manager/dist/zpm-zotero-1.3.0.xpi`.
+   `/Users/sbilmis/developer/projects/zotero-project-manager/dist/zpm-zotero-1.3.2.xpi`.
 2. In **Zotero → Tools → Plugins → gear → Install Plugin From File…**, select that
    XPI. Install over the existing plugin and restart Zotero if prompted. Check that
-   Zotero Project Manager shows **1.3.0**. Version 1.2.0 does not have the picker.
+   ZPM shows **1.3.2**. Zotero 10 requires 1.3.2 or newer; version 1.2.0 does not have the picker.
 3. In **Zotero → Settings → Advanced**, enable **Allow other applications on this
    computer to communicate with Zotero**. The picker respects this setting and
    does not enable it automatically. No online account or API key is needed.
@@ -50,7 +50,7 @@ garbled arrows/quotes and preserves non-English author names and paper titles.
 ## Insert a link while writing
 
 1. In Zotero's left sidebar, click a collection under **My Library**, for example
-   **scientometry**. Leave Zotero running.
+   **scientometry**. Select exactly one collection and leave Zotero running.
 2. In Emacs, open your `.org` note and put the text cursor where the link belongs.
 3. Press **M-x**, type **zpm-insert-paper-link**, and press Return. `M-x` means
    Option-x, or Escape followed by x. It runs a named Emacs command.

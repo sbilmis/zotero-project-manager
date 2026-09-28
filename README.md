@@ -1,10 +1,10 @@
-# ZPM — Zotero Project Manager
+# Zotero Project Manager (ZPM)
 
 ZPM exports Zotero collections into clean, ordinary research
 folders. Zotero remains the source of truth: the project reads Zotero data and copies
 attachments outward without modifying the library, database, or original files.
 
-Use the self-contained Zotero 9 plugin for native note links and interactive exports, or the Python CLI for
+Use the self-contained Zotero 9/10 plugin for native note links and interactive exports, or the Python CLI for
 batch operations, automation, verification, and safe pruning.
 
 ## Choose an interface
@@ -23,7 +23,11 @@ batch operations, automation, verification, and safe pruning.
 Both interfaces produce the same managed workspace format. The plugin stays focused
 and conservative; the CLI provides explicit administrative controls.
 
-## Zotero 9 plugin
+## Zotero plugin
+
+Zotero 10.0.x requires ZPM **1.3.2** or newer. ZPM 1.3.2 also supports Zotero 9.
+Collection actions require exactly one selected collection, including in Zotero 10's
+collection list with multiple selection.
 
 Exports run inside Zotero and do not require Python, Homebrew, pipx, or an
 executable path. Exports create and update local workspaces without launching
@@ -193,6 +197,27 @@ The manifest supports incremental exports:
 - missing or removed attachments are recorded without silently deleting prior copies;
 - identical files re-added under a new Zotero key are reconciled;
 - root-level manifest v1–v4 workspaces migrate under `.zpm/` after a successful export.
+
+### Does this sync both ways?
+
+No. Export and `zpm sync` run **from Zotero to the workspace only**. The selected
+collection and its descendants are scanned on each export; matching attachments
+are left alone and only new or differing attachments are copied in full. This is
+file-level incremental copying, not rsync block transfers. The plugin compares
+SHA-256 hashes; the CLI can reuse hashes when size and modification time match
+the manifest (`--verify` forces content verification).
+
+**Re-export can overwrite edits made to an exported PDF**, including highlights
+and comments saved by an external reader, even when the Zotero original has not
+changed. There is no import-back command, annotation merge, or bidirectional conflict
+resolution. Keep such edits in a separate working copy until you deliberately
+bring them into Zotero. A changed Zotero PDF replaces its exported copy on the next
+export; unchanged PDFs are not recopied. Removed entries stay unless explicitly
+pruned with the CLI's hash-checked pruning option.
+
+Zotero reader annotations and child notes are exported as Markdown with
+**Collection + Annotations**; ZPM does not embed those annotations into the copied
+PDF. Workspace metadata and summaries are refreshed during export.
 
 ## Annotations and layouts
 

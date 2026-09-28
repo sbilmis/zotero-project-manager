@@ -1,6 +1,7 @@
 # Copy Zotero links into notes
 
-ZPM — Zotero Project Manager copies links from Zotero 9 into your notes.
+Zotero Project Manager (ZPM) copies links from Zotero 9 and 10 into your notes.
+Zotero 10.0.x requires ZPM **1.3.2** or newer.
 The menu instructions below use the shortened **ZPM** name starting with **1.3.1**;
 versions through **1.3.0** display **Zotero Project Manager** instead.
 
@@ -15,11 +16,11 @@ macOS or another operating system passes to the Zotero application.
 
 1. In Zotero, open **Tools → Plugins**.
 2. Click the gear menu, then **Install Plugin From File…**.
-3. Choose `dist/zpm-zotero-1.2.0.xpi` in the zotero-project-manager project.
+3. Choose `dist/zpm-zotero-1.3.2.xpi` in the zotero-project-manager project.
    On this Mac the full path is
-   `/Users/sbilmis/developer/projects/zotero-project-manager/dist/zpm-zotero-1.2.0.xpi`.
+   `/Users/sbilmis/developer/projects/zotero-project-manager/dist/zpm-zotero-1.3.2.xpi`.
 4. Follow Zotero's prompts; restart Zotero if requested. Confirm that **Zotero
-   Project Manager** shows version **1.2.0**.
+   Project Manager** shows version **1.3.2**.
 5. To open PDFs in Zotero's own reader, open **Zotero → Settings → General** and
    set the **Open PDFs using** field to **Zotero**. The `open-pdf` URI respects this
    preference; it cannot force Zotero's reader when an external reader is selected.

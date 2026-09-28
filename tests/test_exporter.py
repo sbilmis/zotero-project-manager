@@ -56,6 +56,26 @@ def test_recursive_export_and_incremental_update(tmp_path: Path, zotero_fixture:
         assert "PDF count: 2" in (workspace / ".zpm" / "export-summary.md").read_text(encoding="utf-8")
 
 
+def test_reexport_restores_locally_edited_pdf_without_changing_zotero(
+    tmp_path: Path, zotero_fixture: object
+) -> None:
+    fixture = zotero_fixture
+    output = tmp_path / "exports"
+    with ZoteroDatabase(fixture.data_dir, database_path=fixture.database) as database:
+        records = database.list_collections()
+        selected = resolve_collection(records, "My-AI")
+        forest = build_collection_forest(records)
+        CollectionExporter(database, output).export_many([selected], forest)
+        destination = output / "My-AI" / "Vaswani - 2017 - Attention Is All You Need.pdf"
+        original = fixture.second_pdf.read_bytes()
+        destination.write_bytes(b"external reader highlights and notes")
+        stats = CollectionExporter(database, output).export_many([selected], forest)[0]
+        assert stats.updated == 1
+        assert stats.unchanged == 1
+        assert fixture.second_pdf.read_bytes() == original
+        assert destination.read_bytes() == original
+
+
 def test_export_generates_metadata_json_and_markdown_index(
     tmp_path: Path, zotero_fixture: object
 ) -> None:

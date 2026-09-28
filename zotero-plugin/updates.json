@@ -78,6 +78,17 @@
               "strict_max_version": "9.*"
             }
           }
+        },
+        {
+          "version": "1.3.2",
+          "update_link": "https://github.com/sbilmis/zotero-project-manager/releases/download/v1.3.2/zpm-zotero-1.3.2.xpi",
+          "update_hash": "sha256:d97d5989e21521b44d9baeb34dbf6754b01fe806bc5520b60a00d897427987d2",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "9.0",
+              "strict_max_version": "10.0.*"
+            }
+          }
         }
       ]
     }

@@ -9,8 +9,9 @@
     (goto-char (match-beginning 0))
     (cl-loop repeat 5 collect (read (current-buffer)))))
 ;; Test the deferred registration before loading Org, as at startup.
-(dolist (form zpm-test-link-forms) (eval form t))
-(require 'org)
+(let ((system-type 'darwin))
+  (dolist (form zpm-test-link-forms) (eval form t))
+  (require 'org))
 
 (ert-deftest zpm-deferred-registration ()
   (should (eq (org-link-get-parameter "zotero-collection" :follow) #'sb/org-open-zotero-collection))

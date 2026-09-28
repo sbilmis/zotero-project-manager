@@ -48,7 +48,7 @@ jobs:
         run: python -m twine check dist/*
 
   zotero-plugin:
-    name: Zotero 9 companion plugin
+    name: Zotero 9 and 10 companion plugin
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -66,3 +66,9 @@ jobs:
         run: python scripts/build_zotero_plugin.py
       - name: Verify XPI contents
         run: unzip -t dist/zpm-zotero-*.xpi
+      - name: Install Emacs for Org link and picker checks
+        run: sudo apt-get update && sudo apt-get install -y emacs-nox
+      - name: Test Emacs link handlers and paper picker
+        run: |
+          emacs --batch -Q -l zotero-plugin/tests/org-links.test.el
+          emacs --batch -Q -l zotero-plugin/tests/org-picker.test.el

@@ -83,6 +83,35 @@ test("standard menu export retains folder, annotations, and filename settings", 
   assert.equal(h.plugin.exportInProgress, false);
 });
 
+test("Zotero 10 export menu supports one collection and refuses mixed or multiple rows", async () => {
+  const h = harness();
+  await h.plugin.startup({ id: "zpm@zotero-project-manager", rootURI: "plugin/" });
+  const menu = h.sandbox.menu.menus[0].menus[1];
+  const row = h.selection.collectionTreeRow;
+  let enabled;
+  const context = {
+    collectionTreeRows: [row],
+    get collectionTreeRow() { assert.fail("Removed in Zotero 10"); },
+    setEnabled(value) { enabled = value; },
+  };
+  menu.onShowing(null, context);
+  assert.equal(enabled, true);
+  await h.plugin.exportSelected(context, true);
+  assert.equal(h.exports.length, 1);
+  assert.equal(h.exports[0].key, row.ref.key);
+  h.plugin.chooseOutputDirectory = () => assert.fail("Invalid selection must not choose a folder");
+  for (const rows of [[], [row, row], [row, { isCollection: () => false }],
+    [{ isCollection: () => false }]]) {
+    context.collectionTreeRows = rows;
+    menu.onShowing(null, context);
+    assert.equal(enabled, false);
+    await h.plugin.exportSelected(context, false);
+    assert.equal(h.exports.length, 1);
+    assert.match(h.alerts.at(-1)[1], /exactly one Zotero collection/);
+    assert.equal(h.plugin.exportInProgress, false);
+  }
+});
+
 test("the standard exporter still rejects concurrent exports", async () => {
   const h = harness();
   h.plugin.exportInProgress = true;

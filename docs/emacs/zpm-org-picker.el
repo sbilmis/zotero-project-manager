@@ -18,7 +18,7 @@
   (interactive)
   (with-help-window "*ZPM Picker Setup*"
     (princ "Zotero paper picker setup\n\n")
-    (princ "1. Open Zotero, with the zpm 1.3.0 preview installed.\n")
+    (princ "1. Open Zotero with ZPM installed (1.3.2 or newer for Zotero 10).\n")
     (princ "2. Open Zotero → Settings → Advanced.\n")
     (princ "3. Enable: Allow other applications on this computer to communicate with Zotero.\n")
     (princ "   This allows local applications to read your Zotero library. No online API key is needed.\n")
@@ -67,7 +67,8 @@
                (numberp zpm-request-timeout) (> zpm-request-timeout 0))
     (user-error "Invalid local Zotero port or timeout"))
   (let* ((url-request-method "GET")
-         (url-request-extra-headers '(("X-ZPM-Client" . "emacs") ("Accept" . "application/json")))
+         (url-request-extra-headers '(("X-ZPM-Client" . "emacs") ("Accept" . "application/json")
+                                      ("Zotero-Allowed-Request" . "true")))
          (url-proxy-services nil)
          (url-max-redirections 0)
          (url-show-status nil)
@@ -77,7 +78,7 @@
                      (url-retrieve-synchronously address t t zpm-request-timeout)
                    (error nil))))
     (unless (buffer-live-p buffer)
-      (user-error "Cannot reach Zotero. Open Zotero with zpm 1.3.0pre1 or newer and check the local API setting"))
+      (user-error "Cannot reach Zotero. Open Zotero with ZPM (1.3.2 or newer for Zotero 10) and check the local API setting"))
     (unwind-protect
         (with-current-buffer buffer
           (goto-char (point-min))
@@ -101,7 +102,7 @@
               (signal 'zpm-local-api-disabled (list (alist-get 'error payload))))
             (unless (equal status 200)
               (user-error "%s" (or (alist-get 'error payload)
-                                    (if (equal status 404) "Install the zpm picker preview in Zotero"
+                                    (if (equal status 404) "Install ZPM in Zotero (1.3.2 or newer for Zotero 10)"
                                       (format "Zotero returned HTTP %s" status)))))
             (unless (and (equal (alist-get 'schema payload) 1)
                          (listp (alist-get 'papers payload))

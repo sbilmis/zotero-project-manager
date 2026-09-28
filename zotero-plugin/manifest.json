@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
-  "name": "ZPM — Zotero Project Manager",
-  "version": "1.3.1",
+  "name": "Zotero Project Manager (ZPM)",
+  "version": "1.3.2",
   "description": "Copy Org, Markdown, and Zotero links, and export collections to managed research workspaces.",
   "author": "Zotero Project Manager contributors",
   "homepage_url": "https://github.com/sbilmis/zotero-project-manager",
@@ -10,7 +10,7 @@
       "id": "zpm@zotero-project-manager",
       "update_url": "https://raw.githubusercontent.com/sbilmis/zotero-project-manager/main/zotero-plugin/updates.json",
       "strict_min_version": "9.0",
-      "strict_max_version": "9.*"
+      "strict_max_version": "10.0.*"
     }
   }
 }

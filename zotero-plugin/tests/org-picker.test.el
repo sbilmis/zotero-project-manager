@@ -74,7 +74,8 @@
       (should (equal (zpm--request "6RIU3F76") zpm-test-payload)))
     (should-not (buffer-live-p response))
     (should (equal args '("http://127.0.0.1:23119/zpm/papers?collection=6RIU3F76" t t 5 "GET"
-                          (("X-ZPM-Client" . "emacs") ("Accept" . "application/json")) 0 nil)))))
+                          (("X-ZPM-Client" . "emacs") ("Accept" . "application/json")
+                           ("Zotero-Allowed-Request" . "true")) 0 nil)))))
 
 (ert-deftest zpm-picker-http-failures-are-useful-and-clean-up ()
   (cl-letf (((symbol-function 'url-retrieve-synchronously) (lambda (&rest _) nil)))

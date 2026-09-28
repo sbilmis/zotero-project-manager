@@ -2,6 +2,20 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 1.3.2 — 2026-09-28
+
+- Display the full plugin name as “Zotero Project Manager (ZPM)” in the plugin
+  manager and Add-on Market while retaining short ZPM menus and settings.
+- Support Zotero 10.0.x while retaining Zotero 9 compatibility. Use plural
+  collection selection APIs for exports, links, and the Emacs paper picker;
+  reject multiple or mixed selected rows instead of choosing one implicitly.
+- Send Zotero's allowed-request header from the Emacs picker and update its
+  setup help for stable versions. Retain all existing Org link handlers/commands.
+- Check that release-feed compatibility matches the packaged manifest, and run
+  Emacs link and picker tests in CI.
+- Clarify that export/sync is incremental and one-way. Exported PDF edits are
+  not imported and can be overwritten by a repeat export; tests cover both paths.
+
 ## 1.3.1 — 2026-09-15
 
 - Use ZPM in Zotero menus and settings, and “ZPM — Zotero Project Manager”

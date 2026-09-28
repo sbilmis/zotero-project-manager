@@ -1,6 +1,6 @@
-# ZPM — Zotero Project Manager
+# Zotero Project Manager (ZPM)
 
-A plugin for Zotero 9.
+A plugin for Zotero 9 and 10.0.x. Zotero 10 requires ZPM 1.3.2 or newer.
 
 The plugin adds **ZPM → Export** to Zotero's collection context menu and performs
 the complete export inside Zotero. It requires no Python installation, Homebrew,
