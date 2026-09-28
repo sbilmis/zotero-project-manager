@@ -18,7 +18,8 @@
 (ert-deftest zpm-picker-open-exact-process-arguments-and-no-buffer-edit ()
   (with-temp-buffer
     (org-mode) (insert "Notes")
-    (let (calls)
+    (let ((system-type 'darwin)
+          calls)
       (cl-letf (((symbol-function 'zpm--request) (lambda (&optional _) zpm-test-payload))
                 ((symbol-function 'completing-read) (lambda (_ candidates &rest _) (caar candidates)))
                 ((symbol-function 'start-process) (lambda (&rest args) (push args calls))))
