@@ -1,7 +1,7 @@
 # Zotero link reference
 
 **New to ZPM? Start with the [quick start](QUICKSTART.md).**
-See [plugin installation](../README.md#zotero-plugin) and, for Org users,
+See [plugin installation](PLUGIN-QUICKSTART.md#1-install-zpm) and, for Org users,
 [Emacs setup](EMACS-SETUP.md).
 
 Zotero Project Manager (ZPM) copies links to collections, paper records, PDFs,

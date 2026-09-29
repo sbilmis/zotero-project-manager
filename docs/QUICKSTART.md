@@ -4,7 +4,7 @@ Copy links to Zotero papers, PDFs, and collections into your notes. Choose
 **Markdown** for Obsidian or another compatible Markdown editor, **Org** for
 Emacs, or **Zotero URI** for a plain address. Emacs also has a searchable paper picker.
 
-First, [install ZPM in Zotero](../README.md#zotero-plugin). Zotero 10 requires
+First, [install ZPM in Zotero](PLUGIN-QUICKSTART.md#1-install-zpm). Zotero 10 requires
 ZPM 1.3.2 or newer. For Org links and the Emacs picker, also complete the
 [Emacs setup on macOS](EMACS-SETUP.md).
 
@@ -72,6 +72,7 @@ Run these with **M-x**. Start with the first two:
 - These links open your local Zotero library; they do not share papers publicly.
 - Exporting PDFs is a separate feature. Exports are one-way: edits to exported
   PDFs are not sent back to Zotero and may be overwritten on re-export.
+  See the [plugin quick start](PLUGIN-QUICKSTART.md) for exports and settings.
 
 Need more? See the [PDF, page, annotation, and multiple-link reference](LINKS.md),
 [Emacs setup and connection help](EMACS-SETUP.md), or the

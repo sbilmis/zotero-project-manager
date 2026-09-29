@@ -2,6 +2,9 @@
 
 A plugin for Zotero 9 and 10.0.x. Zotero 10 requires ZPM 1.3.2 or newer.
 
+**Start here:** [Plugin quick start](../docs/PLUGIN-QUICKSTART.md)
+· [Markdown and Org links](../docs/QUICKSTART.md).
+
 The plugin adds **ZPM → Export** to Zotero's collection context menu and performs
 the complete export inside Zotero. It requires no Python installation, Homebrew,
 pipx, or executable configuration. Folder exports remain entirely in Zotero;

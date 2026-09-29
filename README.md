@@ -7,8 +7,8 @@ attachments outward without modifying the library, database, or original files.
 Use the self-contained Zotero 9/10 plugin for native note links and interactive exports, or the Python CLI for
 batch operations, automation, verification, and safe pruning.
 
-**Start here:** [Zotero links for Markdown and Org — quick start](docs/QUICKSTART.md)
-· [Emacs setup](docs/EMACS-SETUP.md)
+**Start here:** [Plugin quick start](docs/PLUGIN-QUICKSTART.md)
+· [Markdown and Org links](docs/QUICKSTART.md)
 · [Download ZPM](https://github.com/sbilmis/zotero-project-manager/releases/latest)
 
 ## Choose an interface
@@ -28,6 +28,9 @@ Both interfaces produce the same managed workspace format. The plugin stays focu
 and conservative; the CLI provides explicit administrative controls.
 
 ## Zotero plugin
+
+Follow the [plugin quick start](docs/PLUGIN-QUICKSTART.md) for installation,
+your first export, repeat exports, link copying, and settings.
 
 Zotero 10.0.x requires ZPM **1.3.2** or newer. ZPM 1.3.2 also supports Zotero 9.
 Collection actions require exactly one selected collection, including in Zotero 10's

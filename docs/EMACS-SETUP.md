@@ -6,12 +6,8 @@ This setup is for **macOS**. The supplied Org link handlers and
 
 ## 1. Install ZPM in Zotero
 
-1. Download the `.xpi` file from the
-   [latest release](https://github.com/sbilmis/zotero-project-manager/releases/latest).
-   Zotero 10 requires **ZPM 1.3.2 or newer**; 1.3.2 also supports Zotero 9.
-2. Open **Zotero → Tools → Plugins → gear → Install Plugin From File…** and choose
-   the downloaded file. Install over an existing ZPM installation if present.
-3. Restart Zotero if prompted. Confirm **Zotero Project Manager (ZPM)** is enabled.
+Follow [Install ZPM](PLUGIN-QUICKSTART.md#1-install-zpm) in the plugin quick start.
+Zotero 10 requires **ZPM 1.3.2 or newer**; 1.3.2 also supports Zotero 9.
 
 Installing the Zotero plugin does not install the Emacs files. Python, Homebrew,
 and zotxt are not required for these linking features.
