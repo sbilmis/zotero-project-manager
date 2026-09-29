@@ -2,6 +2,19 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 1.4.0 — Unreleased (Zotero plugin)
+
+- Export multiple selected Zotero 10 collections to one destination, with a
+  separate workspace for each selected root and one combined result dialog.
+- Include descendants automatically; selecting a parent and its subcollection
+  exports that subtree once under the parent. A subcollection selected alone
+  becomes its own workspace without its parent or siblings.
+- Validate the complete selection before exporting. Reject non-collection rows
+  and selections spanning libraries; preserve single-collection links and picker
+  behavior. Continue other roots after a failure and report partial results.
+- Add plugin and Markdown/Org quick-start guides, reusable Emacs setup, and a
+  recording script. The Python CLI remains at 1.3.2.
+
 ## 1.3.2 — 2026-09-28
 
 - Display the full plugin name as “Zotero Project Manager (ZPM)” in the plugin

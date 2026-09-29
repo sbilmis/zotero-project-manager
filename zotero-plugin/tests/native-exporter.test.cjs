@@ -4,6 +4,7 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
+const vm = require("node:vm");
 
 const {
   ExportError,
@@ -192,6 +193,77 @@ async function fixture() {
   await fs.writeFile(markdown, "# Personal project\n");
   return { root, output, pdf, markdown };
 }
+
+test("selected subcollections export to independent incremental workspaces with safe name collisions", async (context) => {
+  const value = await fixture();
+  context.after(() => fs.rm(value.root, { recursive: true, force: true }));
+  const fileSystem = new NodeFileSystem();
+  const collections = [
+    { id: 1, key: "ABCDEFGH", name: "References", parentID: 90, libraryID: 1 },
+    { id: 2, key: "EFGH2345", name: "Nested", parentID: 1, libraryID: 1 },
+    { id: 3, key: "JKLM5678", name: "References", parentID: 91, libraryID: 1 },
+    { id: 4, key: "NPQR6789", name: "Unselected", parentID: 90, libraryID: 1 },
+  ];
+  const results = [], alerts = [];
+  const sandbox = vm.createContext({ module: { exports: {} }, Zotero: {
+    Prefs: { get: (key) => key === "extensions.zpm.includeNonPdf" ? true : undefined },
+    Collections: { getByParent(id) {
+      return collections.filter((collection) => collection.parentID === id)
+        .flatMap((child) => [child, ...this.getByParent(child.id)]);
+    } },
+    logError(error) { throw error; },
+  }, ZPMNativeExporter: { async exportSnapshot(data, _adapter, key, options) {
+    const result = await exportSnapshot(data, fileSystem, key, options);
+    results.push(result);
+    return result;
+  } } });
+  vm.runInContext(await fs.readFile(path.join(__dirname, "../links.js"), "utf8"), sandbox);
+  vm.runInContext(await fs.readFile(path.join(__dirname, "../zpm.js"), "utf8"), sandbox);
+  const plugin = sandbox.module.exports.ZPMPlugin;
+  plugin.alert = (...args) => alerts.push(args);
+  let prompts = 0;
+  plugin.chooseOutputDirectory = async () => { prompts++; return value.output; };
+  plugin.buildSnapshot = async (root) => {
+    const data = snapshot(value.pdf, value.markdown);
+    data.collections = [root, ...sandbox.Zotero.Collections.getByParent(root.id)].map((c) => ({
+      id: c.id, key: c.key, name: c.name, parent_id: c.parentID, library_id: c.libraryID,
+    }));
+    const [pdf, markdown] = data.attachments["1"];
+    data.attachments = { "1": [pdf], "2": [markdown], "3": [pdf], "4": [pdf] };
+    return data;
+  };
+  const selection = { collectionTreeRows: [collections[1], collections[0], collections[2]]
+    .map((ref) => ({ isCollection: () => true, ref })) };
+  await plugin.exportSelected(selection, true);
+  assert.equal(prompts, 1);
+  assert.equal(results.length, 2);
+  assert.deepEqual((await fs.readdir(value.output)).sort(), ["References", "References [JKLM5678]"]);
+  const first = results[0].workspace;
+  const second = results[1].workspace;
+  assert.equal(await fs.readFile(path.join(first, "Nested", "README.md"), "utf8"), "# Personal project\n");
+  assert.match(await fs.readFile(path.join(first, "Annotations", "Vaswani - 2017 - Attention Is All You Need.md"), "utf8"), /Important result/);
+  for (const [workspace, key] of [[first, "ABCDEFGH"], [second, "JKLM5678"]]) {
+    const manifest = JSON.parse(await fs.readFile(path.join(workspace, ".zpm", "manifest.json")));
+    assert.equal(manifest.collection_key, key);
+  }
+  assert.match(alerts[0][1], /Included within a selected parent collection: Nested/);
+
+  results.length = 0;
+  await plugin.exportSelected(selection, true);
+  assert.ok(results.every((result) => result.copied === 0 && result.updated === 0));
+  assert.deepEqual(results.map((result) => result.unchanged), [2, 1]);
+  await fs.writeFile(value.pdf, "changed PDF from Zotero");
+  results.length = 0;
+  await plugin.exportSelected(selection, true);
+  assert.deepEqual(results.map((result) => result.updated), [1, 1]);
+
+  // Selecting only a child starts its workspace at that child, without siblings or parents.
+  const childOutput = path.join(value.root, "child-output");
+  plugin.chooseOutputDirectory = async () => childOutput;
+  await plugin.exportSelected({ collectionTreeRows: [selection.collectionTreeRows[0]] }, false);
+  assert.deepEqual(await fs.readdir(childOutput), ["Nested"]);
+  assert.equal(await fs.readFile(path.join(childOutput, "Nested", "README.md"), "utf8"), "# Personal project\n");
+});
 
 test("native export copies PDFs and Markdown while isolating control files", async (context) => {
   const value = await fixture();

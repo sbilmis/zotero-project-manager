@@ -2,6 +2,9 @@
 
 A plugin for Zotero 9 and 10.0.x. Zotero 10 requires ZPM 1.3.2 or newer.
 
+This checkout prepares **1.4.0**, adding multi-collection export in Zotero 10.
+The published 1.3.2 release exports one selected collection at a time.
+
 **Start here:** [Plugin quick start](../docs/PLUGIN-QUICKSTART.md)
 · [Markdown and Org links](../docs/QUICKSTART.md).
 
@@ -41,6 +44,18 @@ The collection menu contains **ZPM → Export → Collection**
 and **Collection + Annotations**, with **Settings…** beside Export. Both exports use the same standard workspace;
 repeat exports update it rather than creating an app-specific copy. Existing
 workspaces retain their recorded layout and filename settings.
+
+Exporting a subcollection directly creates a workspace for that subtree, without
+its parent or siblings. In Zotero 10, select several collections and use the same
+Export actions to create a workspace for each under one destination. A selected
+child of a selected parent is included under the parent rather than exported twice.
+Each workspace uses the existing incremental export and name-collision handling.
+The result dialog lists successes and failures; one failed collection does not
+stop the others. Files already written by a failed export are not rolled back.
+
+The whole selection must contain collections from one library. Empty or mixed
+selections are rejected before choosing a destination. Collection link copying
+and the Emacs picker retain their single-collection behavior.
 
 Use the exported files manually in an app of your choice. The experimental
 Gemini Notebook and DEVONthink actions, link setup, and Notebook-specific export

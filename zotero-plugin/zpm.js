@@ -204,6 +204,40 @@ var ZPMPlugin = {
     Zotero.debug("zpm companion plugin stopped");
   },
 
+  selectedExportCollections(context) {
+    // Prefer Zotero 10's complete selection, including any unsupported rows.
+    const rows = context && "collectionTreeRows" in context
+      ? context.collectionTreeRows : [context?.collectionTreeRow];
+    if (!Array.isArray(rows) || !rows.length
+        || rows.some((row) => !row?.isCollection?.() || !row.ref
+          || !Number.isSafeInteger(row.ref.id) || row.ref.id <= 0
+          || !Number.isSafeInteger(row.ref.libraryID) || row.ref.libraryID <= 0
+          || row.ref.deleted)) {
+      throw new Error("Select one or more Zotero collections, without libraries, searches, or other rows.");
+    }
+    const collections = rows.map((row) => row.ref);
+    for (const collection of collections) ZPMLinks.key(collection.key);
+    if (collections.some((collection) => collection.libraryID !== collections[0].libraryID)) {
+      throw new Error("Select collections from one Zotero library at a time.");
+    }
+    return [...new Map(collections.map((collection) => [collection.id, collection])).values()];
+  },
+
+  exportRoots(collections) {
+    // Exporting a parent already includes all descendants, even when a child
+    // appears before its parent in Zotero's selection order.
+    const selectedIDs = new Set(collections.map((collection) => collection.id));
+    const coveredIDs = new Set();
+    for (const collection of collections) {
+      for (const child of Zotero.Collections.getByParent(collection.id, true, false)) {
+        if (child.id !== collection.id && selectedIDs.has(child.id)) coveredIDs.add(child.id);
+      }
+    }
+    const roots = collections.filter((collection) => !coveredIDs.has(collection.id));
+    if (!roots.length) throw new Error("Cannot determine export roots for the selected collections.");
+    return { roots, covered: collections.filter((collection) => coveredIDs.has(collection.id)) };
+  },
+
   async exportSelected(context, annotations) {
     if (this.exportInProgress) {
       this.alert("Export in progress", "Wait for the current export to finish.");
@@ -211,34 +245,49 @@ var ZPMPlugin = {
     }
     this.exportInProgress = true;
     try {
-      const collection = ZPMLinks.selectedCollection(context);
+      const { roots, covered } = this.exportRoots(this.selectedExportCollections(context));
       const outputDir = await this.chooseOutputDirectory(false);
       if (!outputDir) {
         return;
       }
-      const annotationLayout = this.annotationLayout();
-      const snapshot = await this.buildSnapshot(collection, annotations);
-      const stats = await ZPMNativeExporter.exportSnapshot(
-        snapshot,
-        ZPMZoteroFileSystem,
-        collection.key,
-        {
-          outputDir,
-          exportAnnotations: annotations,
-          includeNonPdf: Boolean(Zotero.Prefs.get(ZPM_PREF_INCLUDE_NON_PDF)),
-          annotationLayout,
-          filenameTemplate: String(
-            Zotero.Prefs.get(ZPM_PREF_FILENAME_TEMPLATE) || "author_year_title",
-          ),
-        },
-      );
-      this.alert(
-        "Export complete",
-        `${stats.collectionName}: ${stats.copied} copied, ${stats.updated} updated, `
-          + `${stats.unchanged} unchanged, ${stats.missing} missing.\n\n${stats.workspace}`
+      const options = {
+        outputDir,
+        exportAnnotations: annotations,
+        includeNonPdf: Boolean(Zotero.Prefs.get(ZPM_PREF_INCLUDE_NON_PDF)),
+        annotationLayout: this.annotationLayout(),
+        filenameTemplate: String(Zotero.Prefs.get(ZPM_PREF_FILENAME_TEMPLATE) || "author_year_title"),
+      };
+      const results = [], failures = [];
+      // Serial exports share one destination and one concurrency guard. The
+      // exporter can safely resolve same-name workspaces after each completes.
+      for (const collection of roots) {
+        try {
+          const snapshot = await this.buildSnapshot(collection, annotations);
+          results.push(await ZPMNativeExporter.exportSnapshot(
+            snapshot, ZPMZoteroFileSystem, collection.key, { ...options },
+          ));
+        } catch (error) {
+          Zotero.logError(error);
+          failures.push(`${collection.name} [${collection.key}]: ${error.message || String(error)}`);
+        }
+      }
+      const summary = [];
+      if (roots.length > 1) summary.push(`Exported ${results.length} of ${roots.length} collections.`);
+      if (failures.length) {
+        summary.push(`Failed:\n${failures.join("\n")}\n\nFailed exports may have written some files. Fix the error and re-export to retry.`);
+      }
+      for (const stats of results) {
+        summary.push(`${stats.collectionName}: ${stats.copied} copied, ${stats.updated} updated, `
+          + `${stats.unchanged} unchanged, ${stats.missing} missing.\n${stats.workspace}`
           + (stats.retainedSettings.length
-            ? `\n\nExisting workspace settings retained (${stats.retainedSettings.join(", ")}).`
-            : ""),
+            ? `\nExisting workspace settings retained (${stats.retainedSettings.join(", ")}).` : ""));
+      }
+      if (covered.length) {
+        summary.push(`Included within a selected parent collection: ${covered.map((collection) => collection.name).join(", ")}.`);
+      }
+      this.alert(
+        failures.length ? (results.length ? "Export finished with errors" : "zpm export failed") : "Export complete",
+        summary.join("\n\n"),
       );
     } catch (error) {
       Zotero.logError(error);

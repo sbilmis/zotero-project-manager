@@ -156,7 +156,7 @@ var ZPMLinkMenus = {
         menus.push({
           menuType: "submenu", l10nID: "zpm-export-root",
           onShowing: (_event, context) => {
-            try { ZPMLinks.selectedCollection(context); context.setEnabled(true); }
+            try { plugin.selectedExportCollections(context); context.setEnabled(true); }
             catch (_error) { context.setEnabled(false); }
           },
           menus: [false, true].map((annotations) => ({

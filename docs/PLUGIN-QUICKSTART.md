@@ -4,6 +4,9 @@ Use **Zotero Project Manager (ZPM)** to export a collection into an ordinary
 folder or copy links into your notes. The plugin runs inside Zotero;
 Python, Homebrew, and Emacs are not required.
 
+**Version note:** multi-collection export requires the upcoming **ZPM 1.4.0**.
+The published **1.3.2** release supports exporting one collection or subcollection.
+
 ## 1. Install ZPM
 
 1. Download the `.xpi` file from the
@@ -15,7 +18,7 @@ Python, Homebrew, and Emacs are not required.
 
 ## 2. Export your first collection
 
-1. Select **one collection** under **My Library**. Make sure its PDFs are
+1. Select a collection or subcollection under **My Library**. Make sure its PDFs are
    downloaded and open locally in Zotero.
 2. Right-click the collection and choose **ZPM → Export**:
 
@@ -33,6 +36,19 @@ Python, Homebrew, and Emacs are not required.
 
 ZPM remembers the destination. Choose a folder outside Zotero's data directory.
 Exports create local files; they do not upload them to another service.
+
+**Export a subcollection directly:** right-click `Journal_Club → Anomalies` and
+use the same export action. This creates `Anomalies/` with its descendants;
+`Journal_Club` and its other subcollections are not exported.
+
+**Export several collections (Zotero 10, ZPM 1.4.0):** Command-click on macOS
+or Ctrl-click on Windows/Linux to select collections in the left sidebar, then
+right-click a selected row → **ZPM → Export**. Selecting `Anomalies` and
+`Motivation` creates one folder for each under the same destination. If you
+select a parent and its child, the child is included under the parent once.
+The result reports each workspace and any failures; other collections continue
+if one fails. Select only collections from one library, without searches or
+library-root rows. **Copy Link** remains a single-collection action.
 
 ## 3. Update an exported folder
 
@@ -72,7 +88,7 @@ Right-click a collection → **ZPM → Settings…** to change:
 Defaults are enough for a first export. Existing workspaces keep their recorded
 filename order and layout; use a new export parent folder to try different ones.
 
-**Missing a menu or file?** Check that ZPM is enabled, select one collection,
+**Missing a menu or file?** Check that ZPM is enabled, select only collections,
 and confirm its attachments are downloaded. For updates, use **Tools → Plugins →
 gear → Check for Updates**. See the [link reference](LINKS.md) for page,
 annotation, and multiple-link actions.
