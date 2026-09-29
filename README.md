@@ -187,12 +187,12 @@ Use `zpm --help` and `zpm export --help` for every command and option.
 
 ## Workspace format
 
-A typical export looks like this:
+A typical export with **Collection + Annotations** and the **Separate** layout
+looks like this:
 
 ```text
 My-AI/
     Curie - 2024 - Paper title.pdf
-    README.md
     Books/
         Author - 2023 - Book.pdf
     Annotations/
@@ -206,6 +206,10 @@ My-AI/
 
 Generated control data lives under `.zpm/`, leaving ordinary project names such as
 `README.md`, `INDEX.md`, and `metadata.json` available for Zotero attachments.
+ZPM generates **`.zpm/export-summary.md`**, not a root `README.md`. A root
+`README.md` appears only if you add one yourself or export a matching Zotero
+attachment with **Include non-PDF attachments** enabled. The `.zpm` folder is
+hidden by default in some file managers (in macOS Finder, press **Command-Shift-.**).
 
 The manifest supports incremental exports:
 

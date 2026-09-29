@@ -158,6 +158,12 @@ compatibility range. Automated tests do not install the XPI or launch Zotero.
 
 For a manual acceptance check, use demo records and a disposable Org note:
 
+Confirm a successful export shows a neutral **Export complete** dialog with
+selectable paths, readable multiline counts, and an **OK** button. Check that a
+missing attachment produces **Export finished with missing files** and a warning;
+failed exports must also retain their warning. In the exported folder, find the
+generated summary at `.zpm/export-summary.md`; a root `README.md` is optional.
+
 1. Install the plugin and load both Emacs files using the setup guide.
 2. Copy and activate a collection, record, collection-specific record, PDF,
    physical PDF page, and saved annotation link. Try Markdown links in your

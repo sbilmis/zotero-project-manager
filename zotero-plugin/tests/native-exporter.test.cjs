@@ -221,6 +221,7 @@ test("selected subcollections export to independent incremental workspaces with 
   vm.runInContext(await fs.readFile(path.join(__dirname, "../zpm.js"), "utf8"), sandbox);
   const plugin = sandbox.module.exports.ZPMPlugin;
   plugin.alert = (...args) => alerts.push(args);
+  plugin.notify = (...args) => alerts.push(args);
   let prompts = 0;
   plugin.chooseOutputDirectory = async () => { prompts++; return value.output; };
   plugin.buildSnapshot = async (root) => {

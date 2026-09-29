@@ -36,6 +36,9 @@ Zotero 9 supports exporting one collection or subcollection at a time.
 
 ZPM remembers the destination. Choose a folder outside Zotero's data directory.
 Exports create local files; they do not upload them to another service.
+The generated summary is **`.zpm/export-summary.md`** inside the collection's
+folder; ZPM does not create a root `README.md`. If `.zpm` is hidden in macOS
+Finder, press **Command-Shift-.** to show it.
 
 **Export a subcollection directly:** right-click `Journal_Club → Anomalies` and
 use the same export action. This creates `Anomalies/` with its descendants;

@@ -11,6 +11,10 @@ All notable changes are documented here. This project follows semantic versionin
   Zotero's internal menu. Page and thumbnail menus retain their existing submenus.
 - Document the exported annotation Markdown workaround for ZPM 1.4.0 and add
   regression coverage for visible annotation commands and their destinations.
+- Show successful exports in a neutral results dialog. Keep warning alerts for
+  failed exports and missing attachments, with an explicit missing-files title.
+- Correct the workspace example: generated summaries live in
+  `.zpm/export-summary.md`; a root `README.md` is an optional attachment or user file.
 - Python CLI remains at 1.3.2; no Emacs or workspace migration is required.
 
 ## 1.4.0 — 2026-09-29 (Zotero plugin)
