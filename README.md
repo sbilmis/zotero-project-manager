@@ -7,8 +7,8 @@ attachments outward without modifying the library, database, or original files.
 Use the self-contained Zotero 9/10 plugin for native note links and interactive exports, or the Python CLI for
 batch operations, automation, verification, and safe pruning.
 
-**Start here:** [Zotero links in Emacs — quick start](docs/QUICKSTART.md)
-· [One-time setup](docs/EMACS-SETUP.md)
+**Start here:** [Zotero links for Markdown and Org — quick start](docs/QUICKSTART.md)
+· [Emacs setup](docs/EMACS-SETUP.md)
 · [Download ZPM](https://github.com/sbilmis/zotero-project-manager/releases/latest)
 
 ## Choose an interface

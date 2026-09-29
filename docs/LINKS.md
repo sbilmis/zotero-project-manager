@@ -1,7 +1,8 @@
 # Zotero link reference
 
 **New to ZPM? Start with the [quick start](QUICKSTART.md).**
-For plugin installation and Emacs configuration, use the [one-time setup](EMACS-SETUP.md).
+See [plugin installation](../README.md#zotero-plugin) and, for Org users,
+[Emacs setup](EMACS-SETUP.md).
 
 Zotero Project Manager (ZPM) copies links to collections, paper records, PDFs,
 pages, and saved annotations. Use **Org** for Emacs, **Markdown** for Obsidian or

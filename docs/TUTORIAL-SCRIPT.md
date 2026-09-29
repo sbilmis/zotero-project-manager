@@ -1,4 +1,4 @@
-# Recording script: Zotero links in Emacs
+# Recording script: Zotero links for Markdown and Org
 
 **Status: recording plan; no video has been recorded.**
 
@@ -7,12 +7,14 @@ Aim for a 75–90-second captioned screen recording. The companion text is the
 
 ## Prepare the scene
 
-- Use a demo collection named **Reading list** with a few public paper records.
-  Use a fresh Org note named `demo.org` with the sentence `Related work: `.
-- Complete the [setup](EMACS-SETUP.md) before recording. Do not include installation
-  in this first video. Remove any remembered collection from the demo note.
-- Arrange Zotero and Emacs side by side. Increase the text size so titles and
-  commands are readable at the size used in the GitHub page.
+- Use a demo collection named **Reading list** with a few public paper records
+  and a PDF available locally. Prepare a Markdown note in Obsidian and an Org
+  note named `demo.org`, both with the sentence `Related work: `.
+- Install ZPM and complete the [Emacs setup](EMACS-SETUP.md) before recording.
+  Set Zotero's **Open PDFs using** preference to **Zotero** for the PDF shot.
+  Remove any remembered collection from the Org demo note.
+- Show Zotero beside the note app used in each shot. Increase the text size so
+  titles and commands are readable at the size used in the GitHub page.
 - Show keystrokes and keep notifications and unrelated notes out of the frame.
   Select a real demo paper rather than typing illustrative Zotero keys.
 
@@ -20,18 +22,18 @@ Aim for a 75–90-second captioned screen recording. The companion text is the
 
 | Time | Screen action | Caption / optional narration |
 | --- | --- | --- |
-| 0–7 s | Show Zotero beside the Org note | “ZPM: link Zotero papers while writing in Emacs. One-time setup is linked below.” |
-| 7–15 s | Select Reading list under My Library | “Choose a Zotero collection and leave Zotero open.” |
-| 15–28 s | In Emacs, run `M-x zpm-insert-paper-link` | “Find a paper from your note.” |
-| 28–40 s | Type part of an author or title; choose a result with Return | “Search, select, insert.” |
-| 40–50 s | Put the cursor on the new link and press `C-c C-o` | “Open the link to select that paper's record in Zotero.” |
-| 50–65 s | Run `M-x zpm-open-paper` and select another demo paper | “To open a record without inserting a link, use zpm-open-paper.” |
-| 65–80 s | Run `M-x zpm-remember-collection`, then save the note | “Optional: remember this collection for this note. Save to keep it.” |
-| 80–90 s | End on the quick-start page | “Paper links select records. PDF links open PDFs. See the quick start for both.” |
+| 0–8 s | Show Zotero beside the Markdown note | “ZPM: Zotero links for Markdown and Org notes.” |
+| 8–18 s | Right-click a demo paper → ZPM → Copy Link → Markdown | “Copy a Markdown link from Zotero.” |
+| 18–30 s | Paste into Obsidian; click the link in Reading view | “Jump from your note back to the paper's record.” |
+| 30–45 s | Copy the same paper as Org; paste into Emacs and press `C-c C-o` | “Choose Org for Emacs. Open the link with C-c C-o.” |
+| 45–70 s | Select Reading list in Zotero. In Emacs, run `M-x zpm-insert-paper-link`, filter by author, and choose a result | “Emacs also has a paper picker: search and insert from your note.” |
+| 70–82 s | Expand the paper, copy its PDF attachment as Markdown, paste and open it | “For a direct PDF link, select the PDF attachment.” |
+| 82–90 s | End on the quick-start page | “Paper links select records. PDF links open PDFs. Choose the format for your notes.” |
 
-Leave the search results and inserted link visible long enough to read. An
-optional second clip can cover copying PDF, page, and annotation links from
-Zotero; keep this first clip focused on the paper picker.
+Leave each pasted link and the picker results visible long enough to read.
+Optional follow-up clips can cover page/annotation links or remembering a
+collection in Emacs. Keep this first clip focused on the two note formats and
+the distinction between paper and PDF links.
 
 ## Put the finished video on GitHub
 
