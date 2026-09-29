@@ -106,3 +106,59 @@ or differing PDFs are copied in full. There is no bidirectional sync or import-b
 command. An exported PDF edited in an external reader can be overwritten on the
 next export. Keep those edits separately before re-exporting. Zotero reader
 annotations and notes are exported as Markdown, not embedded into the copied PDF.
+
+## Links and Emacs picker checks
+
+User instructions live in the [quick start](QUICKSTART.md),
+[setup guide](EMACS-SETUP.md), [link reference](LINKS.md), and
+[picker reference](PAPER-PICKER.md).
+
+From the repository root, with the development dependencies installed:
+
+```sh
+node --check zotero-plugin/links.js
+node --test zotero-plugin/tests/*.test.cjs
+emacs --batch -Q -l zotero-plugin/tests/org-links.test.el
+emacs --batch -Q -l zotero-plugin/tests/org-picker.test.el
+.venv/bin/python -m pytest
+python3 scripts/build_zotero_plugin.py
+```
+
+Node tests simulate Zotero APIs and cover selection, link formatting, reader
+hooks, atomic multiple-link copying, endpoint permissions, and cleanup. Emacs
+tests exercise real Org activation with process calls mocked, plus picker
+requests, insertion, cancellation, UTF-8, and collection-keyword persistence.
+The XPI builder verifies the package against the update feed's checksum and
+compatibility range. Automated tests do not install the XPI or launch Zotero.
+
+For a manual acceptance check, use demo records and a disposable Org note:
+
+1. Install the plugin and load both Emacs files using the setup guide.
+2. Copy and activate a collection, record, collection-specific record, PDF,
+   physical PDF page, and saved annotation link. Try Markdown links in your
+   target editor as well.
+3. Copy a mixed record/PDF selection and confirm separate links. Add an unsupported
+   note and confirm copying is disabled. Check a group-library entry separately.
+4. Select a personal collection, use both picker commands, and cancel once with
+   **C-g**. Confirm only directly contained paper records appear.
+5. Remember a collection, save and reopen the note, and change Zotero's selected
+   collection. Confirm the note still uses the remembered collection; forget it,
+   save again, and confirm the picker follows Zotero's selection.
+6. Check local-access error help in a disposable test profile where changing the
+   permission does not affect an existing workflow. Opening help must not change
+   the setting or edit the note.
+
+The picker registers `GET /zpm/papers` on Zotero's local HTTP server. It reads
+the selected collection or an explicit `?collection=KEY`, returns collection
+identity and paper key/title/authors/year, and respects the local API permission.
+It rejects browser-origin requests and unregisters when disabled. The Emacs
+client uses loopback with a bounded timeout, no proxy/cookies, and no redirects.
+Org handlers validate destinations before passing one URI argument to
+`/usr/bin/open`; no shell is involved.
+
+Upstream references:
+
+- [Zotero local API and permission setting](https://www.zotero.org/support/dev/web_api/v3/local_api)
+- [Collection/item/PDF URI routing](https://github.com/zotero/zotero/blob/main/chrome/content/zotero/ZoteroProtocolHandler.mjs)
+- [Reader context-menu events](https://github.com/zotero/zotero/blob/main/chrome/content/zotero/xpcom/reader.js)
+- [PDF-opening preference handling](https://github.com/zotero/zotero/blob/main/chrome/content/zotero/xpcom/fileHandlers.js)

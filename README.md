@@ -7,6 +7,10 @@ attachments outward without modifying the library, database, or original files.
 Use the self-contained Zotero 9/10 plugin for native note links and interactive exports, or the Python CLI for
 batch operations, automation, verification, and safe pruning.
 
+**Start here:** [Zotero links in Emacs — quick start](docs/QUICKSTART.md)
+· [One-time setup](docs/EMACS-SETUP.md)
+· [Download ZPM](https://github.com/sbilmis/zotero-project-manager/releases/latest)
+
 ## Choose an interface
 
 | Capability | Zotero plugin | Python CLI |
@@ -60,7 +64,7 @@ The first export asks for a destination if no valid default exists. Zotero can i
 future releases automatically when **Update Add-ons Automatically** is enabled in the
 Plugins gear menu; **Check for Updates** provides a manual check.
 
-## Native links (1.2.0)
+## Native links
 
 Right-click a collection, paper record, or PDF attachment and choose **ZPM → Copy Link**. Copy Org links for Emacs, Markdown links for Obsidian, or plain Zotero
 URIs. The PDF reader also offers page and annotation links. Explicit **Copy Multiple Links** commands copy selected paper records and PDFs, one per line. Only My
@@ -68,16 +72,17 @@ Library is supported; unsupported entries disable copying and batches never skip
 invalid entries. These commands use Zotero’s native clipboard and need neither
 Actions & Tags nor zotxt, bibliography styles, or an export folder.
 
-See [installation, Emacs setup, examples, and testing](docs/LINKS.md). Version 1.2.0 includes these native link commands.
+Start with the [quick start](docs/QUICKSTART.md), or see the
+[link reference](docs/LINKS.md) for PDF pages, annotations, and multiple links.
 
-## Emacs collection picker (1.3.0)
+## Emacs collection picker
 
 From an Org note, run `M-x zpm-insert-paper-link` or `M-x zpm-open-paper` to browse
 papers in the selected Zotero collection by author, year, and title. Remember a
-collection per note with `zpm-remember-collection`. This local, read-only bridge
-requires plugin 1.3.0 or newer and Zotero's local API permission. Existing native
-links and exports remain unchanged. See the [beginner picker guide](docs/PAPER-PICKER.md).
-Version 1.3.0 is the stable release of the picker.
+collection per note with `zpm-remember-collection`. Follow the
+[one-time setup](docs/EMACS-SETUP.md) to load the Emacs files and enable Zotero's
+local API permission. See the [quick start](docs/QUICKSTART.md) for the everyday
+workflow and the [picker reference](docs/PAPER-PICKER.md) for collection behavior.
 
 ## One workspace, your choice of app
 
