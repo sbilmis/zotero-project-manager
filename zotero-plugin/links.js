@@ -276,15 +276,24 @@ var ZPMLinkMenus = {
     const getTargets = () => this.readerTargets(type, event);
     let disabled = false;
     try { getTargets(); } catch (_error) { disabled = true; }
-    const name = type === "createAnnotationContextMenu" ? "Annotation" : "PDF Page";
     const formats = [["org", "Org"], ["markdown", "Markdown"], ["uri", "Zotero URI"]];
     const commands = formats.map(([format, label]) => ({
       label, disabled,
       onCommand: () => this.copy(getTargets, format),
     }));
+    if (type === "createAnnotationContextMenu") {
+      // Zotero renders annotation menus internally, without native submenus.
+      // Append one group of actionable rows instead of an inert "ZPM" parent.
+      event.append(...commands.map(command => ({
+        ...command,
+        label: `ZPM: Copy Annotation Link (${command.label})`,
+        persistent: true,
+      })));
+      return;
+    }
     event.append({
       label: "ZPM",
-      groups: [[{ label: `Copy ${name} Link`, groups: [commands] }]],
+      groups: [[{ label: "Copy PDF Page Link", groups: [commands] }]],
     });
   },
 };

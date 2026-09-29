@@ -151,11 +151,20 @@ test('Zotero 10 collection and scoped item links reject ambiguous selection with
   assert.equal(h.copied[2], '[[zotero-item:ABCD2345][Paper title]]');
 });
 
-test('reader hooks copy pages and saved annotations and disable unavailable or multiple targets', () => {
+function readerMenu(h, type, params) {
+  const groups = [];
+  h.listeners.find(x => x.type === type).handler({
+    reader: { itemID: 2 }, params, append: (...items) => groups.push(items),
+  });
+  return groups;
+}
+
+test('native reader menus copy pages and disable unavailable or multiple targets', () => {
   const h = harness();
   function event(type, params) {
-    let menu;
-    h.listeners.find(x => x.type === type).handler({ reader: { itemID: 2 }, params, append: value => { menu = value; } });
+    const [[menu]] = readerMenu(h, type, params);
+    assert.equal(menu.label, 'ZPM');
+    assert.equal(menu.groups[0][0].label, 'Copy PDF Page Link');
     return menu.groups[0][0].groups[0];
   }
   let commands = event('createViewContextMenu', { position: { pageIndex: 3 } });
@@ -163,16 +172,69 @@ test('reader hooks copy pages and saved annotations and disable unavailable or m
   assert.equal(h.copied[0], 'zotero://open-pdf/library/items/EFGH6789?page=4');
   commands = event('createThumbnailContextMenu', { pageIndexes: [0] });
   commands[0].onCommand(); assert.match(h.copied[1], /EFGH6789\?page=1/);
-  commands = event('createAnnotationContextMenu', { ids: ['JKLM2345'] });
-  commands[2].onCommand(); assert.match(h.copied[2], /page=5&annotation=JKLM2345$/);
-  for (const [type, params] of [['createViewContextMenu', {}], ['createThumbnailContextMenu', { pageIndexes: [0, 1] }],
-    ['createAnnotationContextMenu', { ids: ['JKLM2345', 'ABCD2345'] }], ['createAnnotationContextMenu', { ids: ['ABCD2345'] }]]) {
+  for (const [type, params] of [['createViewContextMenu', {}], ['createThumbnailContextMenu', { pageIndexes: [0, 1] }]]) {
     const commands = event(type, params);
     assert.equal(commands[0].disabled, true); commands[0].onCommand();
-    assert.equal(h.copied.length, 3);
+    assert.equal(h.copied.length, 2);
   }
   h.pdf.libraryID = 7;
   assert.equal(event('createViewContextMenu', { position: { pageIndex: 0 } })[0].disabled, true);
+});
+
+test('internal annotation menu exposes directly clickable links in every format', () => {
+  const h = harness();
+  const groups = readerMenu(h, 'createAnnotationContextMenu', { ids: ['JKLM2345'] });
+  // Zotero's internal annotation menu renders only top-level rows; it never
+  // traverses native-menu `groups`. All actions must be directly reachable.
+  const commands = groups.flat().filter(command => !command.disabled || command.persistent);
+  assert.equal(groups.length, 1);
+  assert.deepEqual(commands.map(command => command.label), [
+    'ZPM: Copy Annotation Link (Org)',
+    'ZPM: Copy Annotation Link (Markdown)',
+    'ZPM: Copy Annotation Link (Zotero URI)',
+  ]);
+  for (const command of commands) {
+    assert.equal(command.groups, undefined);
+    assert.equal(command.disabled, false);
+    command.onCommand();
+  }
+  assert.deepEqual(h.copied, [
+    '[[zotero-pdf:EFGH6789?page=5&annotation=JKLM2345][Full Text PDF — PDF page 5 — A ［highlight］ with text]]',
+    '[Full Text PDF — PDF page 5 — A ［highlight］ with text](zotero://open-pdf/library/items/EFGH6789?page=5&annotation=JKLM2345)',
+    'zotero://open-pdf/library/items/EFGH6789?page=5&annotation=JKLM2345',
+  ]);
+});
+
+test('annotation commands stay disabled for unsupported selections and revalidate when invoked', () => {
+  const h = harness();
+  const params = { ids: ['JKLM2345'] };
+  const commands = readerMenu(h, 'createAnnotationContextMenu', params).flat();
+  commands[2].onCommand();
+  params.ids = [];
+  commands[2].onCommand();
+  assert.equal(h.copied.length, 1);
+  assert.match(h.errors.at(-1)[1], /exactly one saved PDF annotation/);
+  for (const params of [{}, { ids: [] }, { ids: ['JKLM2345', 'ABCD2345'] },
+    { ids: ['ABCD2345'] }, { ids: ['invalid'] }]) {
+    const commands = readerMenu(h, 'createAnnotationContextMenu', params).flat();
+    assert.equal(commands.length, 3);
+    for (const command of commands) {
+      assert.equal(command.disabled, true);
+      assert.equal(command.persistent, true);
+      command.onCommand();
+    }
+    assert.equal(h.copied.length, 1);
+  }
+  h.pdf.libraryID = 7;
+  const groupCommands = readerMenu(h, 'createAnnotationContextMenu', { ids: ['JKLM2345'] }).flat();
+  for (const command of groupCommands) {
+    assert.equal(command.disabled, true);
+    command.onCommand();
+  }
+  assert.equal(h.copied.length, 1);
+  h.controller.stop();
+  commands[0].onCommand();
+  assert.equal(h.copied.length, 1);
 });
 
 test('shutdown removes this plugin menus and reader hooks; queued commands become inert', () => {

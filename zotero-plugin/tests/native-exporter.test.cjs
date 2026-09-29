@@ -280,10 +280,13 @@ test("native export copies PDFs and Markdown while isolating control files", asy
   assert.equal(await fs.readFile(path.join(workspace, "Vaswani - 2017 - Attention Is All You Need.pdf"), "utf8"), "pdf-content");
   assert.equal(JSON.parse(await fs.readFile(path.join(workspace, ".zpm", "manifest.json"))).items.length, 2);
   assert.match(await fs.readFile(path.join(workspace, ".zpm", "INDEX.md"), "utf8"), /\[MD\]/);
-  assert.match(
-    await fs.readFile(path.join(workspace, "Annotations", "Vaswani - 2017 - Attention Is All You Need.md"), "utf8"),
-    /Important result[\s\S]*Compare models/,
+  const annotationMarkdown = await fs.readFile(
+    path.join(workspace, "Annotations", "Vaswani - 2017 - Attention Is All You Need.md"), "utf8",
   );
+  assert.match(annotationMarkdown, /Important result[\s\S]*Compare models/);
+  assert.ok(annotationMarkdown.includes(
+    "[Open annotation in Zotero](zotero://open-pdf/library/items/PDF00001?annotation=ANNOT001)",
+  ));
   assert.equal(first.copied, 2);
   assert.equal(first.annotations, 1);
 

@@ -2,6 +2,17 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
+## 1.4.1 — Unreleased (Zotero plugin)
+
+[Draft release notes](docs/releases/1.4.1.md).
+
+- Fix the inert **ZPM** entry when right-clicking a saved PDF annotation. Offer
+  directly clickable Org, Markdown, and Zotero URI annotation-link commands in
+  Zotero's internal menu. Page and thumbnail menus retain their existing submenus.
+- Document the exported annotation Markdown workaround for ZPM 1.4.0 and add
+  regression coverage for visible annotation commands and their destinations.
+- Python CLI remains at 1.3.2; no Emacs or workspace migration is required.
+
 ## 1.4.0 — 2026-09-29 (Zotero plugin)
 
 [Release notes and upgrade guide](docs/releases/1.4.0.md).

@@ -161,7 +161,12 @@ For a manual acceptance check, use demo records and a disposable Org note:
 1. Install the plugin and load both Emacs files using the setup guide.
 2. Copy and activate a collection, record, collection-specific record, PDF,
    physical PDF page, and saved annotation link. Try Markdown links in your
-   target editor as well.
+   target editor as well. For the annotation-menu fix, right-click one saved
+   highlight both on the PDF page and in the annotations sidebar. Confirm the
+   three **ZPM: Copy Annotation Link (format)** commands appear directly and each
+   copies a link to that highlight. Select multiple annotations and confirm all
+   three commands are disabled. Plain page text and thumbnails should still use
+   **ZPM → Copy PDF Page Link → format**.
 3. Copy a mixed record/PDF selection and confirm separate links. Add an unsupported
    note and confirm copying is disabled. Check a group-library entry separately.
 4. Select a personal collection, use both picker commands, and cancel once with
