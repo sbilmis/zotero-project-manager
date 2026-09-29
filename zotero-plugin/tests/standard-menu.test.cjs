@@ -6,6 +6,8 @@ const vm = require("node:vm");
 
 function harness() {
   const alerts = [], exports = [], settings = [];
+  const collection = { id: 1, libraryID: 1, key: "ABCDEFGH", name: "Agentic_AI" };
+  const collections = [collection];
   const prefs = new Map([
     ["extensions.zpm.annotationLayout", "sidecar"],
     ["extensions.zpm.filenameTemplate", "year_title"],
@@ -14,6 +16,11 @@ function harness() {
   const sandbox = vm.createContext({
     module: { exports: {} },
     Zotero: {
+      Libraries: { userLibraryID: 1 },
+      Collections: { getByParent(id) {
+        const children = collections.filter((value) => value.parentID === id);
+        return children.flatMap((child) => [child, ...this.getByParent(child.id)]);
+      } },
       Prefs: { get: (key) => prefs.get(key) },
       PreferencePanes: { register: async (options) => settings.push(options) },
       MenuManager: { registerMenu: (options) => { if (options.target === "main/library/collection") sandbox.menu = options; return options.menuID; } },
@@ -27,7 +34,7 @@ function harness() {
       async exportSnapshot(snapshot, _fileSystem, key, options) {
         exports.push({ snapshot, key, options });
         return {
-          collectionName: "Agentic_AI", workspace: "/exports/Agentic_AI",
+          collectionName: snapshot.collection.name, workspace: `/exports/${snapshot.collection.name}`,
           copied: 1, updated: 0, unchanged: 0, missing: 0, retainedSettings: [],
         };
       },
@@ -39,9 +46,8 @@ function harness() {
   plugin.alert = (...args) => alerts.push(args);
   plugin.chooseOutputDirectory = async () => "/exports";
   plugin.buildSnapshot = async (collection, annotations) => ({ collection, annotations });
-  const collection = { key: "ABCDEFGH", name: "Agentic_AI" };
   const selection = { collectionTreeRow: { isCollection: () => true, ref: collection } };
-  return { sandbox, plugin, selection, alerts, exports, settings };
+  return { sandbox, plugin, selection, alerts, exports, settings, collections, prefs };
 }
 
 test("unified collection menu retains export actions and Settings", async () => {
@@ -83,7 +89,7 @@ test("standard menu export retains folder, annotations, and filename settings", 
   assert.equal(h.plugin.exportInProgress, false);
 });
 
-test("Zotero 10 export menu supports one collection and refuses mixed or multiple rows", async () => {
+test("Zotero 10 export menu supports multiple collections but not mixed rows", async () => {
   const h = harness();
   await h.plugin.startup({ id: "zpm@zotero-project-manager", rootURI: "plugin/" });
   const menu = h.sandbox.menu.menus[0].menus[1];
@@ -99,17 +105,117 @@ test("Zotero 10 export menu supports one collection and refuses mixed or multipl
   await h.plugin.exportSelected(context, true);
   assert.equal(h.exports.length, 1);
   assert.equal(h.exports[0].key, row.ref.key);
+  const second = { id: 2, libraryID: 1, key: "JKLM2345", name: "Motivation" };
+  h.collections.push(second);
+  context.collectionTreeRows = [row, { isCollection: () => true, ref: second }];
+  menu.onShowing(null, context);
+  assert.equal(enabled, true);
+  let prompts = 0;
+  h.plugin.chooseOutputDirectory = async () => { prompts++; return "/exports"; };
+  await h.plugin.exportSelected(context, false);
+  assert.equal(prompts, 1);
+  assert.deepEqual(h.exports.slice(1).map((entry) => entry.key), ["ABCDEFGH", "JKLM2345"]);
+  assert.ok(h.exports.slice(1).every((entry) => entry.options.outputDir === "/exports"
+    && entry.options.exportAnnotations === false));
+  assert.match(h.alerts.at(-1)[1], /Exported 2 of 2 collections/);
+  assert.match(h.alerts.at(-1)[1], /\/exports\/Motivation/);
+  // Copy Link remains deliberately singular even when Export is enabled.
+  context.setVisible = () => {};
+  h.sandbox.menu.menus[0].menus[0].onShowing(null, context);
+  assert.equal(enabled, false);
   h.plugin.chooseOutputDirectory = () => assert.fail("Invalid selection must not choose a folder");
-  for (const rows of [[], [row, row], [row, { isCollection: () => false }],
-    [{ isCollection: () => false }]]) {
+  for (const rows of [[], [row, { isCollection: () => false }],
+    [{ isCollection: () => false }], [{ isCollection: () => true }]]) {
     context.collectionTreeRows = rows;
     menu.onShowing(null, context);
     assert.equal(enabled, false);
     await h.plugin.exportSelected(context, false);
-    assert.equal(h.exports.length, 1);
-    assert.match(h.alerts.at(-1)[1], /exactly one Zotero collection/);
+    assert.equal(h.exports.length, 3);
+    assert.match(h.alerts.at(-1)[1], /one or more Zotero collections/);
     assert.equal(h.plugin.exportInProgress, false);
   }
+});
+
+function multiSelection(collections) {
+  return { collectionTreeRows: collections.map((ref) => ({ ref, isCollection: () => true })),
+    get collectionTreeRow() { assert.fail("Removed in Zotero 10"); } };
+}
+
+test("subcollection export uses that subtree, and overlapping selections are exported once", async () => {
+  const h = harness();
+  const child = { id: 2, parentID: 1, libraryID: 1, key: "JKLM2345", name: "Child" };
+  const grandchild = { id: 3, parentID: 2, libraryID: 1, key: "NPQR5678", name: "Grandchild" };
+  h.collections.push(child, grandchild);
+  await h.plugin.exportSelected(multiSelection([child]), true);
+  assert.deepEqual(h.exports.map((entry) => entry.key), [child.key]);
+  h.exports.length = 0;
+  await h.plugin.exportSelected(multiSelection([grandchild, child, h.collections[0], child]), true);
+  assert.deepEqual(h.exports.map((entry) => entry.key), [h.collections[0].key]);
+  assert.match(h.alerts.at(-1)[1], /Included within a selected parent collection: Grandchild, Child/);
+});
+
+test("invalid and cross-library selections are rejected before any export", async () => {
+  const h = harness();
+  h.plugin.chooseOutputDirectory = () => assert.fail("Validation must precede the folder prompt");
+  for (const invalid of [
+    { ...h.collections[0], id: 0 },
+    { ...h.collections[0], key: "nil" },
+    { ...h.collections[0], deleted: true },
+    { ...h.collections[0], id: 2, libraryID: 2 },
+  ]) {
+    await h.plugin.exportSelected(multiSelection([h.collections[0], invalid]), true);
+    assert.equal(h.exports.length, 0);
+    assert.equal(h.alerts.at(-1)[0], "zpm export failed");
+    assert.equal(h.plugin.exportInProgress, false);
+  }
+  assert.match(h.alerts.at(-1)[1], /one Zotero library/);
+});
+
+test("a failed collection is reported and later collections still export", async () => {
+  const h = harness();
+  h.collections.push({ id: 2, libraryID: 1, key: "JKLM2345", name: "Broken" },
+    { id: 3, libraryID: 1, key: "NPQR5678", name: "Last" });
+  h.sandbox.ZPMNativeExporter.exportSnapshot = async (snapshot, _fs, key, options) => {
+    if (key === "JKLM2345") throw new Error("Disk fixture failure");
+    h.exports.push({ snapshot, key, options });
+    return { collectionName: snapshot.collection.name, workspace: `/exports/${snapshot.collection.name}`,
+      copied: 1, updated: 0, unchanged: 0, missing: 0, retainedSettings: [] };
+  };
+  await h.plugin.exportSelected(multiSelection(h.collections), true);
+  assert.deepEqual(h.exports.map((entry) => entry.key), ["ABCDEFGH", "NPQR5678"]);
+  assert.equal(h.alerts.length, 1);
+  assert.equal(h.alerts[0][0], "Export finished with errors");
+  assert.match(h.alerts[0][1], /Exported 2 of 3 collections/);
+  assert.match(h.alerts[0][1], /Broken \[JKLM2345\]: Disk fixture failure/);
+  assert.match(h.alerts[0][1], /may have written some files/);
+  assert.match(h.alerts[0][1], /\/exports\/Last/);
+  assert.equal(h.plugin.exportInProgress, false);
+});
+
+test("the batch keeps one guard, captures the selection, and reuses settings across async exports", async () => {
+  const h = harness();
+  h.collections.push({ id: 2, libraryID: 1, key: "JKLM2345", name: "Second" });
+  const context = multiSelection(h.collections);
+  let release;
+  const pending = new Promise((resolve) => { release = resolve; });
+  let started;
+  const firstStarted = new Promise((resolve) => { started = resolve; });
+  h.plugin.buildSnapshot = async (collection, annotations) => {
+    if (collection.id === 1) { started(); await pending; }
+    return { collection, annotations };
+  };
+  const batch = h.plugin.exportSelected(context, true);
+  await firstStarted;
+  context.collectionTreeRows = [];
+  h.prefs.set("extensions.zpm.annotationLayout", "bundle");
+  await h.plugin.exportSelected(h.selection, false);
+  assert.equal(h.alerts[0][0], "Export in progress");
+  assert.equal(h.plugin.exportInProgress, true);
+  release();
+  await batch;
+  assert.equal(h.exports.length, 2);
+  assert.ok(h.exports.every((entry) => entry.options.annotationLayout === "sidecar"));
+  assert.equal(h.plugin.exportInProgress, false);
 });
 
 test("the standard exporter still rejects concurrent exports", async () => {
@@ -123,8 +229,9 @@ test("the standard exporter still rejects concurrent exports", async () => {
 
 test("folder cancellation releases the export guard without exporting", async () => {
   const h = harness();
+  h.collections.push({ id: 2, libraryID: 1, key: "JKLM2345", name: "Second" });
   h.plugin.chooseOutputDirectory = async () => null;
-  await h.plugin.exportSelected(h.selection, true);
+  await h.plugin.exportSelected(multiSelection(h.collections), true);
   assert.equal(h.exports.length, 0);
   assert.equal(h.alerts.length, 0);
   assert.equal(h.plugin.exportInProgress, false);
