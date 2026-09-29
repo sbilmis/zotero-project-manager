@@ -66,7 +66,7 @@ then open the generated annotation Markdown and use **Open annotation in
 Zotero** beneath that highlight. With the default layout, these files are under
 `Annotations/`; Sidecar uses `*.annotations.md` beside the PDF, and Bundle uses
 `annotations.md` inside the paper's folder. These links are available for
-**My Library** annotations. The direct commands below are fixed in the upcoming
+**My Library** annotations. The direct commands below are fixed in the
 **1.4.1** plugin update.
 
 1. Open a PDF in Zotero's reader.

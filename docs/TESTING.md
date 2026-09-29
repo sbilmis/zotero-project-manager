@@ -1,6 +1,6 @@
 # Test the simplified exporter with Agentic_AI
 
-This guide targets Zotero plugin **1.4.0**, compatible with Zotero 9 and 10.0.x. It exports to one standard workspace
+This guide targets Zotero plugin **1.4.1**, compatible with Zotero 9 and 10.0.x. It exports to one standard workspace
 per collection, with no Gemini Notebook or DEVONthink integration. Existing export
 folders are not removed by upgrading.
 
@@ -8,9 +8,9 @@ folders are not removed by upgrading.
 
 1. For a published release, existing users can run **Tools → Plugins → gear → Check for Updates**.
    For a local build, use the XPI from this checkout; it is not offered by Check for Updates until published.
-   For a manual install, download `zpm-zotero-1.4.0.xpi` from the
-   [1.4.0 release](https://github.com/sbilmis/zotero-project-manager/releases/tag/v1.4.0).
-   To test multi-collection export, build `dist/zpm-zotero-1.4.0.xpi` from this checkout:
+   For a manual install, download `zpm-zotero-1.4.1.xpi` from the
+   [1.4.1 release](https://github.com/sbilmis/zotero-project-manager/releases/tag/v1.4.1).
+   To test multi-collection export, build `dist/zpm-zotero-1.4.1.xpi` from this checkout:
 
    ```bash
    python3 scripts/build_zotero_plugin.py
@@ -77,7 +77,7 @@ Old notebook-link preferences stay unused; there is no link-setting interface.
 
 ## Multi-collection export in Zotero 10
 
-Use ZPM 1.4.0 with demo collections and a fresh output folder. Restore the previous
+Use ZPM 1.4.1 with demo collections and a fresh output folder. Restore the previous
 default export folder afterward if you change it during testing.
 
 1. Select two sibling subcollections with Command-click (macOS) or Ctrl-click

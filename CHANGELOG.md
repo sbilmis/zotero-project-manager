@@ -2,9 +2,9 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
-## 1.4.1 — Unreleased (Zotero plugin)
+## 1.4.1 — 2026-09-29 (Zotero plugin)
 
-[Draft release notes](docs/releases/1.4.1.md).
+[Release notes and upgrade guide](docs/releases/1.4.1.md).
 
 - Fix the inert **ZPM** entry when right-clicking a saved PDF annotation. Offer
   directly clickable Org, Markdown, and Zotero URI annotation-link commands in
