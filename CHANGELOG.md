@@ -2,7 +2,7 @@
 
 All notable changes are documented here. This project follows semantic versioning.
 
-## 1.4.0 — Unreleased (Zotero plugin)
+## 1.4.0 — 2026-09-29 (Zotero plugin)
 
 [Release notes and upgrade guide](docs/releases/1.4.0.md).
 

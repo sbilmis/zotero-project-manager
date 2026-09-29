@@ -2,8 +2,8 @@
 
 A plugin for Zotero 9 and 10.0.x. Zotero 10 requires ZPM 1.3.2 or newer.
 
-This checkout prepares **1.4.0**, adding multi-collection export in Zotero 10.
-The published 1.3.2 release exports one selected collection at a time.
+**1.4.0** adds support for Zotero 10’s multi-collection selection when exporting
+workspaces. Zotero 9 continues to support single-collection exports.
 
 **Start here:** [Plugin quick start](../docs/PLUGIN-QUICKSTART.md)
 · [Markdown and Org links](../docs/QUICKSTART.md).

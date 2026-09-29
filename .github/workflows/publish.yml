@@ -9,8 +9,28 @@ permissions:
   contents: read
 
 jobs:
+  release-scope:
+    name: Determine release components
+    runs-on: ubuntu-latest
+    outputs:
+      publish_cli: ${{ steps.scope.outputs.publish_cli }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      - name: Check release tag against component versions
+        id: scope
+        env:
+          ZPM_RELEASE_TAG: ${{ github.event.release.tag_name || github.ref_name }}
+        run: python scripts/release_scope.py
+
   build:
     name: Build distributions
+    needs: release-scope
+    if: needs.release-scope.outputs.publish_cli == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -32,7 +52,8 @@ jobs:
 
   publish:
     name: Publish to PyPI
-    needs: build
+    needs: [release-scope, build]
+    if: needs.release-scope.outputs.publish_cli == 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -47,4 +68,3 @@ jobs:
           path: dist/
       - name: Publish with Trusted Publishing
         uses: pypa/gh-action-pypi-publish@release/v1
-

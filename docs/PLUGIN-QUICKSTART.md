@@ -4,14 +4,14 @@ Use **Zotero Project Manager (ZPM)** to export a collection into an ordinary
 folder or copy links into your notes. The plugin runs inside Zotero;
 Python, Homebrew, and Emacs are not required.
 
-**Version note:** multi-collection export requires the upcoming **ZPM 1.4.0**.
-The published **1.3.2** release supports exporting one collection or subcollection.
+**Version note:** multi-collection export requires **ZPM 1.4.0** and Zotero 10.
+Zotero 9 supports exporting one collection or subcollection at a time.
 
 ## 1. Install ZPM
 
 1. Download the `.xpi` file from the
    [latest release](https://github.com/sbilmis/zotero-project-manager/releases/latest).
-   ZPM **1.3.2** supports Zotero **9 and 10.0.x**.
+   ZPM **1.4.0** supports Zotero **9 and 10.0.x**.
 2. In Zotero, open **Tools → Plugins → gear → Install Plugin From File…** and
    select the downloaded file. You can install over an existing ZPM version.
 3. Restart if prompted. Confirm **Zotero Project Manager (ZPM)** is enabled.

@@ -45,16 +45,18 @@ Create a protected GitHub environment named `pypi` and require manual approval.
     `addons/sbilmis@zotero-project-manager` to `syt2/zotero-addons-scraper` with up
     to two supported tags; subsequent releases do not need another submission.
 
-The current `.github/workflows/publish.yml` runs for every published GitHub
-release, builds Python artifacts, and authenticates to PyPI using a short-lived
-OpenID Connect token. It does not yet distinguish plugin-only releases: add and
-verify that guard before publishing a plugin-only release such as 1.4.0.
+The `.github/workflows/publish.yml` workflow compares the release tag with both
+component versions using `scripts/release_scope.py`. A tag matching only the
+plugin version skips the Python build and PyPI deployment. A tag matching the CLI
+version permits publishing through the protected `pypi` environment. Unknown tags
+fail before building. Manual dispatch must select a matching version tag.
+PyPI authentication uses a short-lived OpenID Connect token.
 
 ## Release-note standard
 
 Keep a concise historical entry in `CHANGELOG.md` and the complete user-facing
 notes in `docs/releases/X.Y.Z.md`. The latter is the source for the GitHub release
-body. The [1.4.0 draft](docs/releases/1.4.0.md) is an example.
+body. The [1.4.0 release notes](docs/releases/1.4.0.md) is an example.
 
 Every release note must answer:
 

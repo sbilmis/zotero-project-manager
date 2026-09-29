@@ -19,7 +19,7 @@ batch operations, automation, verification, and safe pruning.
 | Metadata, annotations, notes, and cached annotation images | Yes | Yes |
 | Recursive hierarchy, filename presets, and three annotation layouts | Yes | Yes |
 | Incremental SHA-256 synchronization and legacy workspace migration | Yes | Yes |
-| Multiple root collections in one operation | Zotero 10 with ZPM 1.4.0 (upcoming) | Yes |
+| Multiple root collections in one operation | Zotero 10 with ZPM 1.4.0+ | Yes |
 | Dry-run, status, pruning, full verification, and workspace adoption | No | Yes |
 | Diagnostics, named projects, saved configuration, and automation | No | Yes |
 | Runs without Python or direct SQLite access | Yes | No |
@@ -33,10 +33,10 @@ Follow the [plugin quick start](docs/PLUGIN-QUICKSTART.md) for installation,
 your first export, repeat exports, link copying, and settings.
 
 Zotero 10.0.x requires ZPM **1.3.2** or newer. ZPM 1.3.2 also supports Zotero 9.
-Multi-collection export is new in the upcoming **ZPM 1.4.0** plugin. The published
-1.3.2 release exports one selected collection at a time. Copying a collection
+Multi-collection export is available in **ZPM 1.4.0** with Zotero 10.
+ZPM 1.3.2 exports one selected collection at a time. Copying a collection
 link and the Emacs picker still require a single collection.
-See the [1.4.0 release notes (draft)](docs/releases/1.4.0.md) for changes,
+See the [1.4.0 release notes](docs/releases/1.4.0.md) for changes,
 compatibility, and upgrade instructions.
 
 Exports run inside Zotero and do not require Python, Homebrew, pipx, or an
