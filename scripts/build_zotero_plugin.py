@@ -15,6 +15,7 @@ PLUGIN = ROOT / "zotero-plugin"
 OUTPUT = ROOT / "dist"
 FILES = (
     "bootstrap.js",
+    "export-result.xhtml",
     "manifest.json",
     "prefs.js",
     "preferences.xhtml",

@@ -60,6 +60,15 @@ Copying multiple collections, pages, or annotations in one action is unsupported
 
 ## Copy a PDF page or annotation
 
+**ZPM 1.4.0 workaround:** right-clicking a highlight can show an inert **ZPM**
+entry. Export its collection using **ZPM → Export → Collection + Annotations**,
+then open the generated annotation Markdown and use **Open annotation in
+Zotero** beneath that highlight. With the default layout, these files are under
+`Annotations/`; Sidecar uses `*.annotations.md` beside the PDF, and Bundle uses
+`annotations.md` inside the paper's folder. These links are available for
+**My Library** annotations. The direct commands below are fixed in the
+**1.4.1** plugin update.
+
 1. Open a PDF in Zotero's reader.
 2. For a page link, right-click text on the page and choose **ZPM → Copy PDF Page
    Link → Org**. Alternatively, select one thumbnail in the reader's
@@ -67,9 +76,11 @@ Copying multiple collections, pages, or annotations in one action is unsupported
    blank space leaves the page command disabled.
 3. For an annotation link, save a highlight or another annotation, then
    right-click it on the page or in the annotations sidebar. Choose
-   **ZPM → Copy Annotation Link → Org**.
+   **ZPM: Copy Annotation Link (Org)**, **(Markdown)**, or **(Zotero URI)**
+   directly in the menu. Annotation menus use separate commands because Zotero's
+   internal highlight menu does not support nested submenus.
 
-Both submenus also offer **Markdown** and **Zotero URI**. Page numbers refer to
+The page submenu also offers **Markdown** and **Zotero URI**. Page numbers refer to
 physical PDF positions starting at 1, rather than printed labels such as `iv`.
 Annotation links identify a saved annotation and its parent PDF and page. Unsaved
 or multiple selected annotations are unsupported. Deleting an annotation may

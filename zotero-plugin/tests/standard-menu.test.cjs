@@ -5,7 +5,7 @@ const test = require("node:test");
 const vm = require("node:vm");
 
 function harness() {
-  const alerts = [], exports = [], settings = [];
+  const alerts = [], notices = [], exports = [], settings = [];
   const collection = { id: 1, libraryID: 1, key: "ABCDEFGH", name: "Agentic_AI" };
   const collections = [collection];
   const prefs = new Map([
@@ -44,10 +44,11 @@ function harness() {
   vm.runInContext(fs.readFileSync(path.join(__dirname, "../zpm.js"), "utf8"), sandbox);
   const plugin = sandbox.module.exports.ZPMPlugin;
   plugin.alert = (...args) => alerts.push(args);
+  plugin.notify = (...args) => notices.push(args);
   plugin.chooseOutputDirectory = async () => "/exports";
   plugin.buildSnapshot = async (collection, annotations) => ({ collection, annotations });
   const selection = { collectionTreeRow: { isCollection: () => true, ref: collection } };
-  return { sandbox, plugin, selection, alerts, exports, settings, collections, prefs };
+  return { sandbox, plugin, selection, alerts, notices, exports, settings, collections, prefs };
 }
 
 test("unified collection menu retains export actions and Settings", async () => {
@@ -84,8 +85,9 @@ test("standard menu export retains folder, annotations, and filename settings", 
   assert.equal(options.annotationLayout, "sidecar");
   assert.equal(options.filenameTemplate, "year_title");
   assert.equal("notebooklm" in options, false);
-  assert.equal(h.alerts[0][0], "Export complete");
-  assert.match(h.alerts[0][1], /\/exports\/Agentic_AI/);
+  assert.equal(h.alerts.length, 0);
+  assert.equal(h.notices[0][0], "Export complete");
+  assert.match(h.notices[0][1], /\/exports\/Agentic_AI/);
   assert.equal(h.plugin.exportInProgress, false);
 });
 
@@ -117,8 +119,9 @@ test("Zotero 10 export menu supports multiple collections but not mixed rows", a
   assert.deepEqual(h.exports.slice(1).map((entry) => entry.key), ["ABCDEFGH", "JKLM2345"]);
   assert.ok(h.exports.slice(1).every((entry) => entry.options.outputDir === "/exports"
     && entry.options.exportAnnotations === false));
-  assert.match(h.alerts.at(-1)[1], /Exported 2 of 2 collections/);
-  assert.match(h.alerts.at(-1)[1], /\/exports\/Motivation/);
+  assert.equal(h.alerts.length, 0);
+  assert.match(h.notices.at(-1)[1], /Exported 2 of 2 collections/);
+  assert.match(h.notices.at(-1)[1], /\/exports\/Motivation/);
   // Copy Link remains deliberately singular even when Export is enabled.
   context.setVisible = () => {};
   h.sandbox.menu.menus[0].menus[0].onShowing(null, context);
@@ -151,7 +154,7 @@ test("subcollection export uses that subtree, and overlapping selections are exp
   h.exports.length = 0;
   await h.plugin.exportSelected(multiSelection([grandchild, child, h.collections[0], child]), true);
   assert.deepEqual(h.exports.map((entry) => entry.key), [h.collections[0].key]);
-  assert.match(h.alerts.at(-1)[1], /Included within a selected parent collection: Grandchild, Child/);
+  assert.match(h.notices.at(-1)[1], /Included within a selected parent collection: Grandchild, Child/);
 });
 
 test("invalid and cross-library selections are rejected before any export", async () => {
@@ -185,10 +188,24 @@ test("a failed collection is reported and later collections still export", async
   assert.deepEqual(h.exports.map((entry) => entry.key), ["ABCDEFGH", "NPQR5678"]);
   assert.equal(h.alerts.length, 1);
   assert.equal(h.alerts[0][0], "Export finished with errors");
+  assert.equal(h.notices.length, 0);
   assert.match(h.alerts[0][1], /Exported 2 of 3 collections/);
   assert.match(h.alerts[0][1], /Broken \[JKLM2345\]: Disk fixture failure/);
   assert.match(h.alerts[0][1], /may have written some files/);
   assert.match(h.alerts[0][1], /\/exports\/Last/);
+  assert.equal(h.plugin.exportInProgress, false);
+});
+
+test("missing attachments retain a warning instead of a success notification", async () => {
+  const h = harness();
+  h.sandbox.ZPMNativeExporter.exportSnapshot = async () => ({
+    collectionName: "Agentic_AI", workspace: "/exports/Agentic_AI",
+    copied: 1, updated: 0, unchanged: 0, missing: 2, retainedSettings: [],
+  });
+  await h.plugin.exportSelected(h.selection, false);
+  assert.equal(h.notices.length, 0);
+  assert.equal(h.alerts[0][0], "Export finished with missing files");
+  assert.match(h.alerts[0][1], /2 missing/);
   assert.equal(h.plugin.exportInProgress, false);
 });
 

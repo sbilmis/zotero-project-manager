@@ -285,10 +285,14 @@ var ZPMPlugin = {
       if (covered.length) {
         summary.push(`Included within a selected parent collection: ${covered.map((collection) => collection.name).join(", ")}.`);
       }
-      this.alert(
-        failures.length ? (results.length ? "Export finished with errors" : "zpm export failed") : "Export complete",
-        summary.join("\n\n"),
-      );
+      const message = summary.join("\n\n");
+      if (failures.length) {
+        this.alert(results.length ? "Export finished with errors" : "zpm export failed", message);
+      } else if (results.some((stats) => stats.missing > 0)) {
+        this.alert("Export finished with missing files", message);
+      } else {
+        this.notify("Export complete", message);
+      }
     } catch (error) {
       Zotero.logError(error);
       this.alert("zpm export failed", error.message || String(error));
@@ -456,6 +460,14 @@ var ZPMPlugin = {
 
   alert(title, message) {
     Services.prompt.alert(Zotero.getMainWindow(), title, zpmTrimOutput(message));
+  },
+
+  notify(title, message) {
+    // Services.prompt.alert always uses a warning icon, even for success.
+    Zotero.getMainWindow().openDialog(
+      this.rootURI + "export-result.xhtml", "", "chrome,modal,centerscreen,resizable",
+      { title, message: zpmTrimOutput(message) },
+    );
   },
 };
 

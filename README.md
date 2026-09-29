@@ -36,7 +36,8 @@ Zotero 10.0.x requires ZPM **1.3.2** or newer. ZPM 1.3.2 also supports Zotero 9.
 Multi-collection export is available in **ZPM 1.4.0** with Zotero 10.
 ZPM 1.3.2 exports one selected collection at a time. Copying a collection
 link and the Emacs picker still require a single collection.
-See the [1.4.0 release notes](docs/releases/1.4.0.md) for changes,
+ZPM **1.4.1** fixes annotation-link menus and successful-export dialogs.
+See the [1.4.1 release notes](docs/releases/1.4.1.md) for changes,
 compatibility, and upgrade instructions.
 
 Exports run inside Zotero and do not require Python, Homebrew, pipx, or an
@@ -187,12 +188,12 @@ Use `zpm --help` and `zpm export --help` for every command and option.
 
 ## Workspace format
 
-A typical export looks like this:
+A typical export with **Collection + Annotations** and the **Separate** layout
+looks like this:
 
 ```text
 My-AI/
     Curie - 2024 - Paper title.pdf
-    README.md
     Books/
         Author - 2023 - Book.pdf
     Annotations/
@@ -206,6 +207,10 @@ My-AI/
 
 Generated control data lives under `.zpm/`, leaving ordinary project names such as
 `README.md`, `INDEX.md`, and `metadata.json` available for Zotero attachments.
+ZPM generates **`.zpm/export-summary.md`**, not a root `README.md`. A root
+`README.md` appears only if you add one yourself or export a matching Zotero
+attachment with **Include non-PDF attachments** enabled. The `.zpm` folder is
+hidden by default in some file managers (in macOS Finder, press **Command-Shift-.**).
 
 The manifest supports incremental exports:
 

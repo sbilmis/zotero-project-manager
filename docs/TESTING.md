@@ -1,6 +1,6 @@
 # Test the simplified exporter with Agentic_AI
 
-This guide targets Zotero plugin **1.4.0**, compatible with Zotero 9 and 10.0.x. It exports to one standard workspace
+This guide targets Zotero plugin **1.4.1**, compatible with Zotero 9 and 10.0.x. It exports to one standard workspace
 per collection, with no Gemini Notebook or DEVONthink integration. Existing export
 folders are not removed by upgrading.
 
@@ -8,9 +8,9 @@ folders are not removed by upgrading.
 
 1. For a published release, existing users can run **Tools → Plugins → gear → Check for Updates**.
    For a local build, use the XPI from this checkout; it is not offered by Check for Updates until published.
-   For a manual install, download `zpm-zotero-1.4.0.xpi` from the
-   [1.4.0 release](https://github.com/sbilmis/zotero-project-manager/releases/tag/v1.4.0).
-   To test multi-collection export, build `dist/zpm-zotero-1.4.0.xpi` from this checkout:
+   For a manual install, download `zpm-zotero-1.4.1.xpi` from the
+   [1.4.1 release](https://github.com/sbilmis/zotero-project-manager/releases/tag/v1.4.1).
+   To test multi-collection export, build `dist/zpm-zotero-1.4.1.xpi` from this checkout:
 
    ```bash
    python3 scripts/build_zotero_plugin.py
@@ -77,7 +77,7 @@ Old notebook-link preferences stay unused; there is no link-setting interface.
 
 ## Multi-collection export in Zotero 10
 
-Use ZPM 1.4.0 with demo collections and a fresh output folder. Restore the previous
+Use ZPM 1.4.1 with demo collections and a fresh output folder. Restore the previous
 default export folder afterward if you change it during testing.
 
 1. Select two sibling subcollections with Command-click (macOS) or Ctrl-click
@@ -158,10 +158,21 @@ compatibility range. Automated tests do not install the XPI or launch Zotero.
 
 For a manual acceptance check, use demo records and a disposable Org note:
 
+Confirm a successful export shows a neutral **Export complete** dialog with
+selectable paths, readable multiline counts, and an **OK** button. Check that a
+missing attachment produces **Export finished with missing files** and a warning;
+failed exports must also retain their warning. In the exported folder, find the
+generated summary at `.zpm/export-summary.md`; a root `README.md` is optional.
+
 1. Install the plugin and load both Emacs files using the setup guide.
 2. Copy and activate a collection, record, collection-specific record, PDF,
    physical PDF page, and saved annotation link. Try Markdown links in your
-   target editor as well.
+   target editor as well. For the annotation-menu fix, right-click one saved
+   highlight both on the PDF page and in the annotations sidebar. Confirm the
+   three **ZPM: Copy Annotation Link (format)** commands appear directly and each
+   copies a link to that highlight. Select multiple annotations and confirm all
+   three commands are disabled. Plain page text and thumbnails should still use
+   **ZPM → Copy PDF Page Link → format**.
 3. Copy a mixed record/PDF selection and confirm separate links. Add an unsupported
    note and confirm copying is disabled. Check a group-library entry separately.
 4. Select a personal collection, use both picker commands, and cancel once with

@@ -11,7 +11,7 @@ Zotero 9 supports exporting one collection or subcollection at a time.
 
 1. Download the `.xpi` file from the
    [latest release](https://github.com/sbilmis/zotero-project-manager/releases/latest).
-   ZPM **1.4.0** supports Zotero **9 and 10.0.x**.
+   ZPM **1.4.1** supports Zotero **9 and 10.0.x**.
 2. In Zotero, open **Tools → Plugins → gear → Install Plugin From File…** and
    select the downloaded file. You can install over an existing ZPM version.
 3. Restart if prompted. Confirm **Zotero Project Manager (ZPM)** is enabled.
@@ -36,6 +36,9 @@ Zotero 9 supports exporting one collection or subcollection at a time.
 
 ZPM remembers the destination. Choose a folder outside Zotero's data directory.
 Exports create local files; they do not upload them to another service.
+The generated summary is **`.zpm/export-summary.md`** inside the collection's
+folder; ZPM does not create a root `README.md`. If `.zpm` is hidden in macOS
+Finder, press **Command-Shift-.** to show it.
 
 **Export a subcollection directly:** right-click `Journal_Club → Anomalies` and
 use the same export action. This creates `Anomalies/` with its descendants;
