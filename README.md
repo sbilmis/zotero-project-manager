@@ -36,7 +36,7 @@ Zotero 10.0.x requires ZPM **1.3.2** or newer. ZPM 1.3.2 also supports Zotero 9.
 Multi-collection export is new in the upcoming **ZPM 1.4.0** plugin. The published
 1.3.2 release exports one selected collection at a time. Copying a collection
 link and the Emacs picker still require a single collection.
-See the [1.4.0 release notes (draft)](docs/releases/v1.4.0.md) for changes,
+See the [1.4.0 release notes (draft)](docs/releases/1.4.0.md) for changes,
 compatibility, and upgrade instructions.
 
 Exports run inside Zotero and do not require Python, Homebrew, pipx, or an

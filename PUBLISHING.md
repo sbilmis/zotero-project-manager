@@ -21,7 +21,7 @@ Create a protected GitHub environment named `pypi` and require manual approval.
    `zotero-plugin/manifest.json` for a plugin release; update `pyproject.toml` and
    `src/zotero_project_manager/__init__.py` for a CLI release. Do not bump an
    unchanged component solely to match the other component's version.
-2. Update `CHANGELOG.md` and prepare `docs/releases/vX.Y.Z.md` using the
+2. Update `CHANGELOG.md` and prepare `docs/releases/X.Y.Z.md` using the
    [release-note template](.github/RELEASE_TEMPLATE.md). Follow the editorial
    and publication checks below for every release, including patches and previews.
 3. Run `pytest`, the plugin JavaScript tests, and build Python and XPI artifacts locally.
@@ -53,8 +53,8 @@ verify that guard before publishing a plugin-only release such as 1.4.0.
 ## Release-note standard
 
 Keep a concise historical entry in `CHANGELOG.md` and the complete user-facing
-notes in `docs/releases/vX.Y.Z.md`. The latter is the source for the GitHub release
-body. The [1.4.0 draft](docs/releases/v1.4.0.md) is an example.
+notes in `docs/releases/X.Y.Z.md`. The latter is the source for the GitHub release
+body. The [1.4.0 draft](docs/releases/1.4.0.md) is an example.
 
 Every release note must answer:
 

@@ -4,7 +4,7 @@ All notable changes are documented here. This project follows semantic versionin
 
 ## 1.4.0 — Unreleased (Zotero plugin)
 
-[Release notes and upgrade guide](docs/releases/v1.4.0.md).
+[Release notes and upgrade guide](docs/releases/1.4.0.md).
 
 ### Added
 

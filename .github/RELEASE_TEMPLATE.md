@@ -1,5 +1,5 @@
 <!--
-Copy to docs/releases/vX.Y.Z.md for every release, including patch releases and
+Copy to docs/releases/X.Y.Z.md for every release, including patch releases and
 previews. Replace every placeholder and remove these comments. Keep the notes
 proportionate to the change; remove empty or irrelevant sections. Do not claim
 support or verification without evidence. Follow PUBLISHING.md before publishing.
