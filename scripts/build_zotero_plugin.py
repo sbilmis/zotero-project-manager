@@ -26,6 +26,7 @@ FILES = (
     "links.js",
     "picker.js",
     "locale/en-US/zpm.ftl",
+    "locale/zh-CN/zpm.ftl",
 )
 
 

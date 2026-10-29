@@ -13,6 +13,7 @@ var ZPMPreferences = {
 
   init() {
     if (this.initialized) return;
+    document.defaultView.MozXULElement.insertFTLIfNeeded("zpm.ftl");
     this.output = document.getElementById("zpm-preferences-output");
     this.layout = document.getElementById("zpm-preferences-layout-select");
     this.includeNonPdf = document.getElementById("zpm-preferences-include-non-pdf");
@@ -36,16 +37,16 @@ var ZPMPreferences = {
     this.output.addEventListener("change", () => this.saveOutput());
     this.includeNonPdf.addEventListener("change", () => {
       Zotero.Prefs.set(ZPM_PREFERENCES.includeNonPdf, this.includeNonPdf.checked);
-      this.setStatus("Attachment preference saved.", "success");
+      this.setStatus("zpm-status-attachment-saved", "success");
     });
     this.filenameTemplate.addEventListener("change", () => {
       Zotero.Prefs.set(ZPM_PREFERENCES.filenameTemplate, this.filenameTemplate.value);
-      this.setStatus("Filename preference saved.", "success");
+      this.setStatus("zpm-status-filename-saved", "success");
     });
     this.layout.addEventListener("change", () => {
       Zotero.Prefs.set(ZPM_PREFERENCES.layout, this.layout.value);
       this.describeLayout();
-      this.setStatus("Annotation layout saved.", "success");
+      this.setStatus("zpm-status-layout-saved", "success");
     });
     document.getElementById("zpm-preferences-output-button").addEventListener(
       "click",
@@ -56,7 +57,7 @@ var ZPMPreferences = {
 
   saveOutput() {
     Zotero.Prefs.set(ZPM_PREFERENCES.output, this.output.value.trim());
-    this.setStatus("Export folder saved.", "success");
+    this.setStatus("zpm-status-export-folder-saved", "success");
   },
 
   async chooseOutput() {
@@ -89,7 +90,7 @@ var ZPMPreferences = {
       }
     } catch (error) {
       Zotero.logError(error);
-      this.setStatus(`Could not choose an export folder: ${error.message || error}`, "error");
+      this.setStatus("zpm-status-choose-folder-error", "error", { error: error.message || String(error) });
     } finally {
       this.choosingOutput = false;
       button.disabled = false;
@@ -98,15 +99,19 @@ var ZPMPreferences = {
 
   describeLayout() {
     const descriptions = {
-      separate: "PDFs follow the collection hierarchy; generated files live under Annotations/.",
-      sidecar: "Each annotation Markdown file and its image assets sit beside the corresponding PDF.",
-      bundle: "Each paper receives a folder containing its PDF, annotations.md, and image assets.",
+      separate: "zpm-layout-description-separate",
+      sidecar: "zpm-layout-description-sidecar",
+      bundle: "zpm-layout-description-bundle",
     };
-    this.layoutDescription.textContent = descriptions[this.layout.value];
+    document.l10n.formatValue(descriptions[this.layout.value]).then((value) => {
+      this.layoutDescription.textContent = value;
+    });
   },
 
-  setStatus(message, kind) {
-    this.status.textContent = message;
-    this.status.dataset.kind = kind;
+  setStatus(messageId, kind, args = undefined) {
+    document.l10n.formatValue(messageId, args).then((message) => {
+      this.status.textContent = message;
+      this.status.dataset.kind = kind;
+    });
   },
 };

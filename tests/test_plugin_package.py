@@ -22,6 +22,8 @@ def test_preview_package_contains_core_plugin_and_settings_only(tmp_path, monkey
         assert b"destinations.js" not in archive.read("bootstrap.js")
         assert b'loadSubScript(rootURI + "links.js")' in archive.read("bootstrap.js")
         assert b"copyTextToClipboard" in archive.read("links.js")
+        assert "locale/zh-CN/zpm.ftl" in archive.namelist()
+        assert "导出分类" in archive.read("locale/zh-CN/zpm.ftl").decode("utf-8")
         assert b'loadSubScript(rootURI + "picker.js")' in archive.read("bootstrap.js")
         assert b'"/zpm/papers"' in archive.read("picker.js")
         assert b"getScope('zpm-preferences').ZPMPreferences.init()" in archive.read("preferences.xhtml")

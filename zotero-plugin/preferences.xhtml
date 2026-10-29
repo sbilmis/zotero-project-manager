@@ -3,18 +3,18 @@
       xmlns:html="http://www.w3.org/1999/xhtml"
       onload="Zotero_Preferences.getScope('zpm-preferences').ZPMPreferences.init()">
     <groupbox id="zpm-preferences-locations">
-        <label><html:h2>Export locations</html:h2></label>
-        <html:p class="zpm-preferences-intro">
+        <label><html:h2 data-l10n-id="zpm-settings-heading-locations">Export locations</html:h2></label>
+        <html:p class="zpm-preferences-intro" data-l10n-id="zpm-settings-intro-locations">
             Choose where ZPM creates and updates project workspaces.
         </html:p>
 
         <html:div class="zpm-preferences-field-grid">
-            <html:label for="zpm-preferences-output">Default export folder</html:label>
+            <html:label for="zpm-preferences-output" data-l10n-id="zpm-settings-label-output">Default export folder</html:label>
             <html:div class="zpm-preferences-path-row">
                 <html:input id="zpm-preferences-output" type="text" spellcheck="false"/>
-                <html:button id="zpm-preferences-output-button" type="button">Choose…</html:button>
+                <html:button id="zpm-preferences-output-button" type="button" data-l10n-id="zpm-settings-button-choose">Choose…</html:button>
             </html:div>
-            <html:span class="zpm-preferences-help">
+            <html:span class="zpm-preferences-help" data-l10n-id="zpm-settings-help-output">
                 Each Zotero collection becomes a project workspace inside this folder.
             </html:span>
 
@@ -23,60 +23,60 @@
     </groupbox>
 
     <groupbox id="zpm-preferences-content">
-        <label><html:h2>Exported content</html:h2></label>
-        <html:p class="zpm-preferences-intro">
+        <label><html:h2 data-l10n-id="zpm-settings-heading-content">Exported content</html:h2></label>
+        <html:p class="zpm-preferences-intro" data-l10n-id="zpm-settings-intro-content">
             PDFs are always exported. Zotero notes and annotations are selected from the collection menu.
         </html:p>
         <html:label class="zpm-preferences-checkbox-row">
             <html:input id="zpm-preferences-include-non-pdf" type="checkbox"/>
-            Include other attached files such as Markdown, text, images, and data files
+            <html:span data-l10n-id="zpm-settings-label-non-pdf">Include other attached files such as Markdown, text, images, and data files</html:span>
         </html:label>
-        <html:p class="zpm-preferences-help">
+        <html:p class="zpm-preferences-help" data-l10n-id="zpm-settings-help-content">
             Original file attachments are copied alongside PDFs. Generated zpm files are kept safely under .zpm/.
         </html:p>
     </groupbox>
 
     <groupbox id="zpm-preferences-layout">
-        <label><html:h2>Annotation layout</html:h2></label>
-        <html:p class="zpm-preferences-intro">
+        <label><html:h2 data-l10n-id="zpm-settings-heading-layout">Annotation layout</html:h2></label>
+        <html:p class="zpm-preferences-intro" data-l10n-id="zpm-settings-intro-layout">
             Select how generated Markdown and cached annotation images are arranged around PDFs.
         </html:p>
         <html:div class="zpm-preferences-layout-grid">
-            <html:label for="zpm-preferences-filename-select">Attachment filename order</html:label>
+            <html:label for="zpm-preferences-filename-select" data-l10n-id="zpm-settings-label-filename">Attachment filename order</html:label>
             <html:select id="zpm-preferences-filename-select">
-                <html:option value="author_year_title">Author — Year — Title</html:option>
-                <html:option value="author_title_year">Author — Title — Year</html:option>
-                <html:option value="year_author_title">Year — Author — Title</html:option>
-                <html:option value="year_title_author">Year — Title — Author</html:option>
-                <html:option value="title_author_year">Title — Author — Year</html:option>
-                <html:option value="title_year_author">Title — Year — Author</html:option>
-                <html:option value="author_title">Author — Title</html:option>
-                <html:option value="year_title">Year — Title</html:option>
-                <html:option value="title_author">Title — Author</html:option>
-                <html:option value="title_year">Title — Year</html:option>
-                <html:option value="title">Title only</html:option>
+                <html:option value="author_year_title" data-l10n-id="zpm-filename-author-year-title">Author — Year — Title</html:option>
+                <html:option value="author_title_year" data-l10n-id="zpm-filename-author-title-year">Author — Title — Year</html:option>
+                <html:option value="year_author_title" data-l10n-id="zpm-filename-year-author-title">Year — Author — Title</html:option>
+                <html:option value="year_title_author" data-l10n-id="zpm-filename-year-title-author">Year — Title — Author</html:option>
+                <html:option value="title_author_year" data-l10n-id="zpm-filename-title-author-year">Title — Author — Year</html:option>
+                <html:option value="title_year_author" data-l10n-id="zpm-filename-title-year-author">Title — Year — Author</html:option>
+                <html:option value="author_title" data-l10n-id="zpm-filename-author-title">Author — Title</html:option>
+                <html:option value="year_title" data-l10n-id="zpm-filename-year-title">Year — Title</html:option>
+                <html:option value="title_author" data-l10n-id="zpm-filename-title-author">Title — Author</html:option>
+                <html:option value="title_year" data-l10n-id="zpm-filename-title-year">Title — Year</html:option>
+                <html:option value="title" data-l10n-id="zpm-filename-title">Title only</html:option>
             </html:select>
-            <html:p class="zpm-preferences-help">
+            <html:p class="zpm-preferences-help" data-l10n-id="zpm-settings-help-filename">
                 Existing workspaces retain the filename order recorded in their manifest.
             </html:p>
 
-            <html:label for="zpm-preferences-layout-select">Workspace arrangement</html:label>
+            <html:label for="zpm-preferences-layout-select" data-l10n-id="zpm-settings-label-arrangement">Workspace arrangement</html:label>
             <html:select id="zpm-preferences-layout-select">
-                <html:option value="separate">Separate — generated files under Annotations/</html:option>
-                <html:option value="sidecar">Sidecar — annotations beside each PDF</html:option>
-                <html:option value="bundle">Bundle — one folder per paper</html:option>
+                <html:option value="separate" data-l10n-id="zpm-layout-separate">Separate — generated files under Annotations/</html:option>
+                <html:option value="sidecar" data-l10n-id="zpm-layout-sidecar">Sidecar — annotations beside each PDF</html:option>
+                <html:option value="bundle" data-l10n-id="zpm-layout-bundle">Bundle — one folder per paper</html:option>
             </html:select>
             <html:p id="zpm-preferences-layout-description" class="zpm-preferences-layout-description"></html:p>
         </html:div>
-        <html:p class="zpm-preferences-warning">
+        <html:p class="zpm-preferences-warning" data-l10n-id="zpm-settings-warning-layout">
             Existing workspaces keep the layout recorded in their manifest. Export to a new parent
             folder when changing layouts.
         </html:p>
     </groupbox>
 
     <groupbox id="zpm-preferences-safety">
-        <label><html:h2>Read-only guarantee</html:h2></label>
-        <html:p class="zpm-preferences-safety-copy">
+        <label><html:h2 data-l10n-id="zpm-settings-heading-safety">Read-only guarantee</html:h2></label>
+        <html:p class="zpm-preferences-safety-copy" data-l10n-id="zpm-settings-safety-copy">
             The plugin reads Zotero metadata, attachments, notes, and cached annotation images. It
             never writes to zotero.sqlite or modifies files inside the Zotero data directory.
         </html:p>
